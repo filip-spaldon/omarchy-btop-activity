@@ -3,10 +3,12 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
+import Quickshell.Io
 import qs.Commons
 import qs.Ui
 import "components" as Components
 import "lib/shortcuts" as Shortcuts
+import "lib/Settings.js" as Settings
 import "lib/UpdateInterval.js" as UpdateInterval
 import "lib/BtopHumanizer.js" as BtopHumanizer
 
@@ -25,6 +27,7 @@ Panel {
     property bool updateEditing: false
     property string pendingLaunch: ""
     property bool configSynced: false
+    property string leftClick: Settings.defaults.leftClick
 
     readonly property var activity: bar && bar.shell ? bar.shell.serviceFor(moduleName) : null
     readonly property color foreground: bar ? bar.barForeground : Color.foreground
@@ -36,6 +39,7 @@ Panel {
     readonly property string customIconUrl: resolveIconPath(customIconPath)
     readonly property string helpScript: localPath(Qt.resolvedUrl("helpers/open-btop-help.sh"))
     readonly property string keybindingsScript: localPath(Qt.resolvedUrl("helpers/open-keybindings.sh"))
+    readonly property string toggleScript: localPath(Qt.resolvedUrl("helpers/toggle-btop.sh"))
     readonly property string windowMode: String(setting("windowMode", "Floating"))
     readonly property bool transparentBackground: setting("transparentBackground", false) === true
     readonly property int updateMs: intSetting("updateMs", 2000, UpdateInterval.minimum, UpdateInterval.maximum)
@@ -78,6 +82,18 @@ Panel {
     Shortcuts.HyprlandBinding {
         id: activityBinding
         actionDescription: "Activity"
+    }
+
+    property FileView settingsFile: FileView {
+        path: root.localPath(Qt.resolvedUrl("settings.toml"))
+        printErrors: false
+        onLoaded: root.applySettings(text())
+    }
+
+    function applySettings(text) {
+        var settings = Settings.parse(text);
+        UpdateInterval.usePresets(settings.pollIntervals);
+        leftClick = settings.leftClick;
     }
 
     function intSetting(name, fallback, minimum, maximum) {
@@ -177,12 +193,18 @@ Panel {
         pendingLaunch = "";
         if (action === "help")
             execBtopHelp();
+        else if (action === "toggle")
+            execToggle();
         else
             execBtop();
     }
 
     function execBtop() {
         Quickshell.execDetached(["omarchy-launch-or-focus-tui", "--app-id=" + btopAppId, "btop", "--config", activity.configPath]);
+    }
+
+    function execToggle() {
+        Quickshell.execDetached(["bash", toggleScript, btopAppId, activity.configPath]);
     }
 
     function execBtopHelp() {
@@ -195,7 +217,7 @@ Panel {
 
     function launchBtop() {
         close();
-        launchWhenConfigReady("btop");
+        launchWhenConfigReady(leftClick === "toggle" ? "toggle" : "btop");
     }
 
     function launchBtopHelp() {

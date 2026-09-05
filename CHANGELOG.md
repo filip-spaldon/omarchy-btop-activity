@@ -2,12 +2,21 @@
 
 Notable changes to btop Activity are documented here.
 
+## 0.2.5 - 2026-1-03
+
+- Read defaults from a shipped `settings.toml`: `poll_intervals` sets the
+  interval ladder the Update interval arrows step through, and `left_click`
+  chooses whether a left click opens btop or toggles it (@gw7523).
+- Add `helpers/toggle-btop.sh`, which closes the plugin's btop window when one
+  is open and launches btop otherwise. It backs `left_click = "toggle"` and can
+  be bound directly, so one key both opens and closes btop (@gw7523).
+
 ## 0.2.4 - 2026-09-20
 
 - Stop using GNU find's FTS traversal for DRM fdinfo sampling so processes
   exiting during `/proc` discovery cannot abort the collector. Thanks
-  @LekkerBelangrijk and @kzagoris for the independent crash reports and
-  @gw7523 for the fix.
+  @LekkerBelangrijk and @kzagoris for the independent crash reports and @gw7523
+  for the fix.
 - Keep the proc scanner in a dedicated Python helper and propagate unexpected
   failures to telemetry retry handling.
 
