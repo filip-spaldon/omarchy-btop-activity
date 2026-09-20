@@ -71,7 +71,7 @@ output=$(run_helper "$PCI")
 assert_no_find
 grep -Fq $'counter\t'"$PCI"$'\t9\trender\t50' <<<"$output"
 
-# A followed fd that is a directory (the FTS_LOGICAL crash shape) is ignored.
+# Directory descriptors are unrelated to the target DRM nodes.
 ln -s "$process/fd" "$process/fd/10"
 ln -s / "$process/fd/11"
 output=$(run_helper "$PCI")
