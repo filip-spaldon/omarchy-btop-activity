@@ -102,6 +102,24 @@ assert_no_find
 grep -Fq $'counter\t'"$PCI"$'\t7\trender\t100000000' <<<"$output"
 chmod 644 "$PROC_ROOT/126/fdinfo/1"
 
+# Unexpected scanner failures must reach the telemetry retry path.
+FAIL_BIN=$TEMP_ROOT/fail-bin
+mkdir -p "$FAIL_BIN"
+cat >"$FAIL_BIN/python3" <<'MOCK'
+#!/bin/bash
+exit 42
+MOCK
+chmod 0755 "$FAIL_BIN/python3"
+if env PATH="$FAIL_BIN:$PATH" \
+  BTOP_GPU_PROC_ROOT="$PROC_ROOT" BTOP_GPU_DRI_ROOT="$DRI_ROOT" \
+  bash "$HELPER" "$PCI"; then
+  printf 'expected scanner failure\n' >&2
+  exit 1
+else
+  status=$?
+  [[ $status -eq 42 ]]
+fi
+
 # No DRM nodes: quiet success, no find.
 rm -f "$DRI_ROOT"/card[0-9]* "$DRI_ROOT"/renderD[0-9]*
 output=$(run_helper "$PCI")

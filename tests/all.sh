@@ -14,6 +14,7 @@ readonly TEST_DIR PLUGIN_ROOT QMLTESTRUNNER
 
 cd "$PLUGIN_ROOT"
 
+tests/test_gpu_fdinfo.sh
 tests/test_runtime_config_preparation.sh
 node --test tests/test_telemetry.mjs
 "$QMLTESTRUNNER" -input "$TEST_DIR" -import "$PLUGIN_ROOT" \

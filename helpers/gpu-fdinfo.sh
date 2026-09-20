@@ -23,6 +23,8 @@ done
 while IFS= read -r -d '' file; do
   files+=("$file")
 done < <(python3 "$script_dir/gpu-fdinfo.py" "$proc_root" "$dri_root")
+scanner_pid=$!
+wait "$scanner_pid"
 
 # Keep counters between refreshes in QML instead of sleeping in the collector.
 {
