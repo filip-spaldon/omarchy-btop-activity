@@ -2,6 +2,13 @@
 
 Notable changes to btop Activity are documented here.
 
+## Unreleased
+
+- Stop using `find -L` on `/proc/*/fd` for GPU fdinfo sampling. GNU find
+  aborts in its FTS cycle-detection hash when a descriptor directory
+  vanishes or a followed fd is a directory; walk the fd table in Python
+  and match DRM nodes by device+inode instead (@gw7523).
+
 ## 0.2.3 - 2026-09-13
 
 - Validate the user runtime directory and keep the generated btop config in an
