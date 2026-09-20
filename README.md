@@ -322,6 +322,8 @@ Planned work stays at the top. Shipped entries come from
 
 | Release | Date       | What changed                                      |
 | ------- | ---------- | ------------------------------------------------- |
+| 0.2.4   | 2026-09-20 | avoid GNU find crashes during GPU sampling        |
+|         |            | keep scanner failures visible and tested          |
 | 0.2.3   | 2026-09-13 | isolate and reuse a private runtime config        |
 |         |            | compact settings and improve their navigation     |
 |         |            | apply transparent backgrounds live                |
