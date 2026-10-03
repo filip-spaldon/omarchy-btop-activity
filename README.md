@@ -1,11 +1,19 @@
-# btop Activity for Omarchy Quattro
+# btop activity for Omarchy
 
-Brings btop back to the Omarchy bar: live CPU, RAM, and GPU usage (also vRAM)
-and temperatures.
+Brings btop back to the Omarchy bar to provide a system/activity monitor with
+live CPU, RAM, and GPU usage (also VRAM) and temperatures. Minimal overhead: in
+idle about 1MB usage, CPU <0.02%.
 
 ![btop Activity on the Omarchy desktop](preview.png)
 
-## Features
+## Demo
+
+See btop launch from the bar, switch between floating and tiled layouts, apply a
+250 ms refresh interval live, and update its keybinding.
+
+<https://github.com/user-attachments/assets/d8dde155-dd62-4afa-b586-2f4b95a61d4e>
+
+### Features
 
 - applies settings live to the running btop application
 - preserves Omarchy's btop theme without touching the normal user `btop.conf`
@@ -30,13 +38,6 @@ After installation:
   - choose **Help** to open built-in help in the selected window mode
 - **hover over it** to see RAM use, CPU use and temperature, and GPU use,
   temperature, and VRAM
-
-## Demo
-
-See btop launch from the bar, switch between floating and tiled layouts, apply a
-250 ms refresh interval live, and update its keybinding.
-
-<https://github.com/user-attachments/assets/d8dde155-dd62-4afa-b586-2f4b95a61d4e>
 
 ## Settings
 
@@ -106,13 +107,6 @@ Under **btop**, live settings include whether btop paints its own background.
 
 Since v0.2.5, the plugin offers an optional user-owned settings file at
 `~/.config/omarchy/ilyazar.btop/settings.toml`, respecting `XDG_CONFIG_HOME`
-when set. If it is missing, opening the plugin popup asks whether to create it:
-
-- **Yes** creates a copy of `settings.example.toml`, without replacing an
-  existing file or opening an editor automatically.
-- **No** creates nothing and keeps using the built-in defaults. The prompt stays
-  dismissed until the shell restarts or an existing settings file is deleted.
-  There is no migration or separate preference file to manage.
 
 At the bottom of the settings popup, **More plugin settings > Open settings
 file** opens your copy in Omarchy's configured editor. If the file is missing,
@@ -166,6 +160,8 @@ different tools. When a reading is missing, the plugin can use an installed tool
 for that hardware to fill the gap. Installing one does not guarantee every
 reading: some GPUs do not expose a separate temperature or dedicated video
 memory.
+
+The full documentation is describes here
 
 Follow only the sections that match your hardware. On a mixed-GPU system, each
 card can use a different source. The plugin detects tools automatically and
@@ -363,7 +359,7 @@ leftover is harmless: normal btop never reads it, and reinstalling the plugin
 reuses it. No marker or backup files are created.
 
 GPU temperature and VRAM depend on driver support. If unavailable, the hover
-says `--` or `-- (vRAM)`. See the hardware-specific
+says `--` or `-- (VRAM)`. See the hardware-specific
 [setup instructions](#optional-hardware-setup) for optional tools, permissions,
 and verification commands.
 
