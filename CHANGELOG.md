@@ -2,30 +2,17 @@
 
 Notable changes to btop Activity are documented here.
 
-## 0.2.5 - 2026-1-03
+## 0.2.5 - 2026-10-03
 
-- Add configurable interval presets and left-click toggle behavior (@gw7523).
-- Toggle btop on bar left-click by default, with or without a settings file.
-- Use one selected polling interval for CPU, RAM, and GPU telemetry, without
-  a separate one-second GPU minimum. Add a CPU and memory benchmark.
-- Sample only while hovering over the icon or viewing its menu. Take an
-  immediate reading and another after 100 ms, then use the selected interval.
-  Stop polling when idle, including with the Meters icon, and coordinate demand
-  across monitors. Keep the last valid CPU reading during warmup and avoid
-  dimming the icon when sampling starts.
-- Give plugin-launched btop its own window identity, so toggle closes only its
-  window and leaves ordinary btop windows alone. Preserve that identity across
-  floating/tiled mode changes, Start, and Help.
-- Refuse standalone launches without the private runtime config and show a
-  notification instead of silently using normal btop settings.
-- Keep advanced preferences in the user-owned
-  `~/.config/omarchy/ilyazar.btop/settings.toml`, outside the plugin checkout.
-  Offer to create it when missing, or keep built-in defaults if declined.
-  Open it from More plugin settings; valid saves apply live and invalid edits
-  leave the session's last valid settings unchanged.
-- Add `helpers/toggle-btop.sh`, which closes the plugin's btop window when one
-  is open and launches btop otherwise. It backs `left_click = "toggle"` and can
-  be bound directly, so one key both opens and closes btop (@gw7523).
+- Toggle the plugin's btop window with a left-click or optional keyboard
+  binding, leaving ordinary btop windows alone (@gw7523).
+- Configure click behavior and interval presets through More plugin settings.
+  The settings file is optional; valid saves apply immediately and invalid
+  edits leave the last working settings unchanged.
+- Reduce idle CPU use by sampling only on hover or while the menu is open,
+  without making the icon flicker when sampling resumes.
+- Make GPU readings follow the selected update interval alongside CPU and RAM.
+- Show theme-colored `[b]`, `[s]`, and `[?]` menu shortcut hints.
 
 ## 0.2.4 - 2026-09-20
 
