@@ -17,9 +17,19 @@ mkdir -p "$MOCK_BIN" "$(dirname "$RUNTIME_CONFIG")" "$TEMP_ROOT/config/omarchy"
 
 cat >"$MOCK_BIN/hyprctl" <<MOCK
 #!/bin/bash
-[[ \$1 == clients ]] && exec cat "$CLIENTS"
+if [[ \$1 == clients ]]; then
+  if [[ \${QUERY_EXIT:-0} != 0 ]]; then
+    printf 'client query failed\n' >&2
+    exit "\$QUERY_EXIT"
+  fi
+  exec cat "$CLIENTS"
+fi
 shift
 printf 'close %s\n' "\$*" >>"$LOG"
+if [[ \${CLOSE_EXIT:-0} != 0 ]]; then
+  printf 'window close failed\n' >&2
+  exit "\$CLOSE_EXIT"
+fi
 MOCK
 
 cat >"$MOCK_BIN/omarchy-launch-or-focus-tui" <<MOCK
@@ -62,5 +72,34 @@ grep -Fq "launch --app-id=org.omarchy.btop_tiled btop --config $RUNTIME_CONFIG" 
 rm "$RUNTIME_CONFIG" "$TEMP_ROOT/config/omarchy/shell.json"
 run_toggle
 grep -Fqx 'launch --app-id=org.omarchy.btop btop' "$LOG"
+
+# Failed discovery must not be treated as an empty client list.
+if QUERY_EXIT=42 run_toggle org.omarchy.btop "$RUNTIME_CONFIG" 2>"$TEMP_ROOT/error"; then
+  printf 'expected client query failure\n' >&2
+  exit 1
+else
+  [[ $? -eq 42 ]]
+fi
+[[ ! -s $LOG ]]
+grep -Fxq 'client query failed' "$TEMP_ROOT/error"
+
+printf 'invalid json' >"$CLIENTS"
+if run_toggle org.omarchy.btop "$RUNTIME_CONFIG" 2>"$TEMP_ROOT/error"; then
+  printf 'expected client parse failure\n' >&2
+  exit 1
+fi
+[[ ! -s $LOG && -s $TEMP_ROOT/error ]]
+
+# A failed close must stay a failure, without retrying another dispatcher.
+printf '[{"class":"org.omarchy.btop","address":"0xabc"}]' >"$CLIENTS"
+if CLOSE_EXIT=43 run_toggle org.omarchy.btop "$RUNTIME_CONFIG" 2>"$TEMP_ROOT/error"; then
+  printf 'expected window close failure\n' >&2
+  exit 1
+else
+  [[ $? -eq 43 ]]
+fi
+[[ $(wc -l <"$LOG") -eq 1 ]]
+grep -Fqx 'close hl.dsp.window.close({ window = "address:0xabc" })' "$LOG"
+grep -Fxq 'window close failed' "$TEMP_ROOT/error"
 
 printf 'ok - toggle btop\n'

@@ -26,16 +26,13 @@ fi
 
 # Close windows from either mode, so switching Floating/Tiled while btop is
 # open cannot strand the window opened under the previous mode.
-addresses=$(hyprctl clients -j 2>/dev/null | jq -r '.[]
+addresses=$(hyprctl clients -j | jq -r '.[]
   | select(.class == "org.omarchy.btop" or .class == "org.omarchy.btop_tiled")
-  | .address' || true)
+  | .address')
 
 if [[ -n $addresses ]]; then
   while read -r address; do
-    # Omarchy's Hyprland speaks Lua dispatchers; closewindow covers a stock one.
-    hyprctl dispatch "hl.dsp.window.close({ window = \"address:$address\" })" \
-      >/dev/null 2>&1 ||
-      hyprctl dispatch closewindow "address:$address" >/dev/null 2>&1 || true
+    hyprctl dispatch "hl.dsp.window.close({ window = \"address:$address\" })"
   done <<<"$addresses"
   exit 0
 fi
