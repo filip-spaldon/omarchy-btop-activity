@@ -57,7 +57,9 @@ For the update interval, press Enter or click the value to edit it. Left/Right
 (or `h`/`l`) change it by 1 ms. Up/Down (or `k`/`j`) move through the presets
 in [`settings.toml`](#settingstoml) while still letting you type any value in
 btop's full range. From a custom value, they jump to the next preset above or
-below it and wrap around at the ends.
+below it and wrap around at the ends. The selected interval drives CPU, RAM,
+and GPU sampling together. Hardware reads run asynchronously; a slow reader
+finishes before another copy is started, rather than building up a queue.
 
 Edit `~/.config/hypr/bindings.lua` directly, or select **Keybindings** in the
 plugin settings to open it. The button prefers Neovim, jumping to an existing
@@ -123,8 +125,8 @@ left_click = "toggle"
 poll_intervals = [250, 500, 1000, 2000, 5000]
 ```
 
-- `left_click`: `"toggle"` is the default and closes matching btop windows when
-  they are already open; `"open"` launches or focuses instead. This affects only
+- `left_click`: `"toggle"` is the default and closes the plugin's btop window
+  when it is already open; `"open"` launches or focuses instead. This affects only
   the bar icon's left-click. The popup's **start [b]top** action always opens or
   focuses btop.
 - `poll_intervals`: the preset ladder for the update-interval arrows, in
@@ -145,9 +147,16 @@ o.bind("SUPER + CTRL + T", "Activity", os.getenv("HOME")
   .. "/.config/omarchy/plugins/ilyazar.btop/helpers/toggle-btop.sh")
 ```
 
-Invoked bare like that, the script takes the window mode from `shell.json`,
-closes any btop window the plugin opened in either mode, and otherwise launches
-btop with the plugin's runtime config when one exists.
+Plugin launches use the private window identity `org.omarchy.btop-activity`,
+unchanged between floating and tiled mode. Toggle closes only one such window;
+ordinary btop windows, including those opened by Omarchy's default Activity
+shortcut, are left alone. Start and Help reuse the plugin's window.
+
+Invoked bare like that, the script takes the window mode from `shell.json` and
+uses the plugin's private runtime config. If that config is missing or
+unreadable, it refuses to launch and shows a notification asking you to open
+btop from the plugin first. It never launches btop with the normal user config.
+An existing plugin window can still be closed without its config file.
 
 ## Optional hardware setup
 
@@ -430,6 +439,27 @@ omarchy-shell shell rescanPlugins
 ```
 
 If a reload still shows an old component, run `omarchy restart shell`.
+
+### Telemetry overhead
+
+Run the optional benchmark against the current implementation:
+
+```bash
+python3 tests/benchmark_telemetry.py --seconds 20 --json /tmp/btop-telemetry.json
+```
+
+It tests 100, 250, 500, 1000, 2000, and 5000 ms, with a three-second warmup for
+each run. CPU usage includes the telemetry engine and its child readers;
+100% means one logical CPU. Memory is reported in MiB, using sampled total
+process-tree PSS to account for shared pages. Brief peaks between samples can
+be missed; JSON also includes RSS measurements. The final CPU accounting
+includes shutdown, while peak individual-process RSS includes startup.
+
+This is an isolated, headless Quickshell telemetry engine. Its memory includes
+Qt/Quickshell's baseline, not just the incremental cost inside the existing
+Omarchy shell. It excludes bar rendering and does not measure power draw.
+Results depend on the GPU backend and other work running on the machine.
+The benchmark does not edit plugin settings or launch btop.
 
 ## License
 

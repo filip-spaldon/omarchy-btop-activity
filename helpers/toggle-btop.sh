@@ -11,32 +11,22 @@
 
 set -euo pipefail
 
-app_id="${1:-}"
-config="${2:-}"
+[[ $# -eq 0 || $# -eq 2 ]] || exit 2
+mode="${1:-}"
+config="${2-${XDG_RUNTIME_DIR:+$XDG_RUNTIME_DIR/omarchy-btop-activity/btop.conf}}"
 
-if [[ -z $app_id ]]; then
-  # Bare invocation: follow the widget's own window mode and runtime config.
+if [[ $# -eq 0 ]]; then
   mode=$(jq -r '.. | objects | select(.id? == "ilyazar.btop") | .windowMode // empty' \
     "${XDG_CONFIG_HOME:-$HOME/.config}/omarchy/shell.json" 2>/dev/null | head -n 1 || true)
-  app_id=org.omarchy.btop
-  [[ ${mode:-} == Tiled ]] && app_id=org.omarchy.btop_tiled
-  runtime="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/omarchy-btop-activity/btop.conf"
-  if [[ -f $runtime ]]; then config=$runtime; fi
+  mode=${mode:-Floating}
+fi
+case $mode in Floating | Tiled) ;; *) exit 2 ;; esac
+
+# The same private identity survives changes between floating and tiled.
+address=$(hyprctl clients -j | jq -r '
+  first(.[] | select(.class == "org.omarchy.btop-activity") | .address) // empty')
+if [[ -n $address ]]; then
+  exec hyprctl dispatch "hl.dsp.window.close({ window = \"address:$address\" })"
 fi
 
-# Close windows from either mode, so switching Floating/Tiled while btop is
-# open cannot strand the window opened under the previous mode.
-addresses=$(hyprctl clients -j | jq -r '.[]
-  | select(.class == "org.omarchy.btop" or .class == "org.omarchy.btop_tiled")
-  | .address')
-
-if [[ -n $addresses ]]; then
-  while read -r address; do
-    hyprctl dispatch "hl.dsp.window.close({ window = \"address:$address\" })"
-  done <<<"$addresses"
-  exit 0
-fi
-
-launch=(omarchy-launch-or-focus-tui "--app-id=$app_id" btop)
-[[ -n $config ]] && launch+=(--config "$config")
-exec "${launch[@]}"
+exec bash "$(dirname -- "${BASH_SOURCE[0]}")/open-btop.sh" "$mode" "$config"

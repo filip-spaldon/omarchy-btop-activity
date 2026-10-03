@@ -38,6 +38,7 @@ Panel {
     readonly property string iconStyle: String(setting("iconStyle", "CPU"))
     readonly property string customIconPath: String(setting("customIconPath", ""))
     readonly property string customIconUrl: resolveIconPath(customIconPath)
+    readonly property string openScript: localPath(Qt.resolvedUrl("helpers/open-btop.sh"))
     readonly property string helpScript: localPath(Qt.resolvedUrl("helpers/open-btop-help.sh"))
     readonly property string keybindingsScript: localPath(Qt.resolvedUrl("helpers/open-keybindings.sh"))
     readonly property string toggleScript: localPath(Qt.resolvedUrl("helpers/toggle-btop.sh"))
@@ -49,7 +50,6 @@ Panel {
     readonly property bool updateAvailable: activity && activity.configReady && !activity.configBusy
     readonly property string procSorting: String(setting("procSorting", "cpu lazy"))
     readonly property bool procTree: setting("procTree", false) === true
-    readonly property string btopAppId: windowMode === "Tiled" ? "org.omarchy.btop_tiled" : "org.omarchy.btop"
     readonly property bool customIconInvalid: iconStyle === "Custom" && (customIconUrl === "" || customIconLoadFailed)
     readonly property var gpus: activity ? activity.gpus : []
     readonly property var defaultRendererGpu: gpus.find(function (gpu) {
@@ -208,17 +208,17 @@ Panel {
     }
 
     function execBtop() {
-        Quickshell.execDetached(["omarchy-launch-or-focus-tui", "--app-id=" + btopAppId, "btop", "--config", activity.configPath]);
+        Quickshell.execDetached(["bash", openScript, windowMode, activity.configPath]);
     }
 
     function execToggle() {
-        Quickshell.execDetached(["bash", toggleScript, btopAppId, activity.configPath]);
+        Quickshell.execDetached(["bash", toggleScript, windowMode, activity.configPath]);
     }
 
     function execBtopHelp() {
         if (!activity)
             return;
-        Quickshell.execDetached(["bash", helpScript, btopAppId, activity.configPath]);
+        Quickshell.execDetached(["bash", helpScript, windowMode, activity.configPath]);
     }
 
     function launchBtop() {
@@ -356,15 +356,12 @@ Panel {
 
     function applyWindowMode(mode) {
         var action = mode === "Tiled" ? "tile" : "float";
-        var appIds = ["org.omarchy.btop", "org.omarchy.btop_tiled"];
-        for (var i = 0; i < appIds.length; i++) {
-            var window = "class:" + appIds[i];
-            var command = "hl.dispatch(hl.dsp.window.float({ action = \"" + action + "\", window = \"" + window + "\" }))";
-            if (mode === "Floating") {
-                command += "; hl.dispatch(hl.dsp.window.resize({ x = 875, y = 600, " + "relative = false, window = \"" + window + "\" }))" + "; hl.dispatch(hl.dsp.window.center({ window = \"" + window + "\" }))";
-            }
-            Quickshell.execDetached(["hyprctl", "eval", command]);
+        var window = "class:^org[.]omarchy[.]btop-activity$";
+        var command = "hl.dispatch(hl.dsp.window.float({ action = \"" + action + "\", window = \"" + window + "\" }))";
+        if (mode === "Floating") {
+            command += "; hl.dispatch(hl.dsp.window.resize({ x = 875, y = 600, " + "relative = false, window = \"" + window + "\" }))" + "; hl.dispatch(hl.dsp.window.center({ window = \"" + window + "\" }))";
         }
+        Quickshell.execDetached(["hyprctl", "eval", command]);
     }
 
     function saveCustomIconPath() {
@@ -572,7 +569,7 @@ Panel {
         bar: root.bar
         open: root.opened
         focusTarget: keyCatcher
-        contentWidth: popup.fittedContentWidth(Style.space(root.page === "createSettings" ? 760 : 340))
+        contentWidth: popup.fittedContentWidth(root.page === "createSettings" ? Math.max(Style.space(340), Math.ceil(creationMessage.implicitWidth) + popup.padding * 2 + Border.left(popup.borderSpec) + Border.right(popup.borderSpec)) : Style.space(340))
         contentHeight: popup.fittedContentHeight(content.implicitHeight)
 
         PanelKeyCatcher {
@@ -672,8 +669,9 @@ Panel {
                     spacing: Style.space(16)
 
                     Text {
+                        id: creationMessage
                         width: parent.width
-                        text: "Since v0.2.5, btop ships a default settings file.\n" + "Do you want to create one at\n" + root.pluginSettings.path + "\n" + " (recommended; you can always delete it later)?"
+                        text: "Since v0.2.5, btop ships a default settings file.\n" + "Do you want to create one at\n" + root.pluginSettings.path + "\n" + "(recommended; you can always delete it later)?"
                         textFormat: Text.PlainText
                         color: root.foreground
                         font.family: root.fontFamily
@@ -682,7 +680,7 @@ Panel {
                     }
 
                     Row {
-                        anchors.right: parent.right
+                        anchors.left: parent.left
                         spacing: Style.space(10)
 
                         Repeater {

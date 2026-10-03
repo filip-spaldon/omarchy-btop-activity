@@ -13,14 +13,16 @@ QtObject {
             Qt.quit()
             return
         }
-        telemetry = component.createObject(root, { updateMs: 1000 })
+        telemetry = component.createObject(root, {
+            updateMs: Number(Quickshell.env("BTOP_SMOKE_UPDATE_MS") || 1000)
+        })
     }
     property Timer progress: Timer {
         interval: 1000
         repeat: true
         running: root.telemetry !== null
         onTriggered: console.log("TELEMETRY " + JSON.stringify({
-            time: Date.now(), cpu: telemetry.cpuUsage,
+            time: Date.now(), updateMs: telemetry.updateMs, cpu: telemetry.cpuUsage,
             memory: telemetry.memoryUsage, temperature: telemetry.cpuTemperature,
             gpus: telemetry.gpus,
             errors: telemetry.backendErrors

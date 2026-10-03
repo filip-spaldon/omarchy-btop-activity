@@ -7,6 +7,6 @@
 poll_intervals = [250, 500, 1000, 2000, 5000]
 
 # What a left click on the bar icon does. "open" launches or focuses btop;
-# "toggle" also closes existing btop windows. The popup's start action always
+# "toggle" also closes the plugin's btop window. The popup's start action always
 # opens or focuses btop, regardless of this setting.
 left_click = "toggle"

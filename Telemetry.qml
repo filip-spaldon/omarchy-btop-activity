@@ -15,8 +15,7 @@ QtObject {
   property string cpuTemperatureKind: ""
   property var gpus: []
   readonly property bool available: cpuUsage >= 0 && memoryUsage >= 0
-  readonly property int gpuInterval: Math.max(1000, updateMs)
-  readonly property int gpuStaleMs: Math.max(5000, gpuInterval * 2)
+  readonly property int gpuStaleMs: Math.max(5000, updateMs * 2)
   readonly property string directory: decodeURIComponent(
     Qt.resolvedUrl(".").toString().replace(/^file:\/\//, "").replace(/\/$/, ""))
   readonly property string sampler: directory + "/helpers/sample-telemetry.awk"
@@ -294,18 +293,15 @@ QtObject {
     }
   }
 
-  property Timer statsTimer: Timer {
+  property Timer sampleTimer: Timer {
     interval: root.updateMs
     repeat: true
     running: true
     triggeredOnStart: true
-    onTriggered: root.sampleBase()
-  }
-  property Timer sensorTimer: Timer {
-    interval: root.gpuInterval
-    repeat: true
-    running: true
-    onTriggered: root.sampleSensors()
+    onTriggered: {
+      root.sampleBase()
+      root.sampleSensors()
+    }
   }
   property Timer discoveryTimer: Timer {
     interval: 30000

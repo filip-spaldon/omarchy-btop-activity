@@ -6,6 +6,13 @@ Notable changes to btop Activity are documented here.
 
 - Add configurable interval presets and left-click toggle behavior (@gw7523).
 - Toggle btop on bar left-click by default, with or without a settings file.
+- Use one selected polling interval for CPU, RAM, and GPU telemetry, without
+  a separate one-second GPU minimum. Add a CPU and memory benchmark.
+- Give plugin-launched btop its own window identity, so toggle closes only its
+  window and leaves ordinary btop windows alone. Preserve that identity across
+  floating/tiled mode changes, Start, and Help.
+- Refuse standalone launches without the private runtime config and show a
+  notification instead of silently using normal btop settings.
 - Keep advanced preferences in the user-owned
   `~/.config/omarchy/ilyazar.btop/settings.toml`, outside the plugin checkout.
   Offer to create it when missing, or keep built-in defaults if declined.
