@@ -671,7 +671,7 @@ Panel {
                     }
 
                     MenuRow {
-                        label: root.shortcutHint("?") + " Help"
+                        label: root.shortcutHint("?") + " help"
                         navigationIndex: 2
                         onClicked: root.launchBtopHelp()
                     }
