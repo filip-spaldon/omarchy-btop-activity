@@ -1,0 +1,29 @@
+name: Assign incoming pull requests
+
+on:
+  pull_request_target:
+    types: [opened, reopened]
+
+permissions:
+  issues: write
+
+jobs:
+  assign:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Assign unassigned pull requests to the maintainer
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          endpoint="repos/$GH_REPO/issues/$PR_NUMBER"
+          # Preserve assignments made before this job starts.
+          count="$(gh api "$endpoint" --jq '.assignees | length')"
+          if [[ "$count" == 0 ]]; then
+            gh api --method POST "$endpoint/assignees" \
+              -f 'assignees[]=ilyaZar' --silent
+          fi
