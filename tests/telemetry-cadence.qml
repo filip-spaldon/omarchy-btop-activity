@@ -12,6 +12,7 @@ QtObject {
     property int baseCalls: 0
     property int sensorCalls: 0
     updateMs: root.intervals[root.step]
+    active: true
     function sampleBase() { baseCalls++ }
     function sampleSensors() { sensorCalls++ }
   }

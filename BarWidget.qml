@@ -27,6 +27,8 @@ Panel {
     property bool updateEditing: false
     property string pendingLaunch: ""
     property bool configSynced: false
+    property var _telemetryService: null
+    readonly property bool telemetryWanted: visible && (button.tooltipHovered || opened)
     readonly property string leftClick: pluginSettings.values.leftClick
     property color shortcutColor: Color.foreground
 
@@ -341,6 +343,14 @@ Panel {
         }
     }
 
+    function updateTelemetryDemand() {
+        if (_telemetryService && _telemetryService !== activity)
+            _telemetryService.setTelemetryDemand(root, false);
+        _telemetryService = activity;
+        if (_telemetryService)
+            _telemetryService.setTelemetryDemand(root, telemetryWanted);
+    }
+
     function syncBtopConfig() {
         if (!activity || configSynced || activity.configBusy)
             return;
@@ -488,7 +498,11 @@ Panel {
     onProcSortingChanged: requestConfigSync()
     onProcTreeChanged: requestConfigSync()
     onTransparentBackgroundChanged: requestConfigSync()
-    onActivityChanged: requestConfigSync()
+    onTelemetryWantedChanged: updateTelemetryDemand()
+    onActivityChanged: {
+        requestConfigSync();
+        updateTelemetryDemand();
+    }
 
     Connections {
         target: root.activity
@@ -500,7 +514,14 @@ Panel {
                 root.launchWhenConfigReady(root.pendingLaunch);
         }
     }
-    Component.onCompleted: Qt.callLater(root.syncBtopConfig)
+    Component.onCompleted: {
+        Qt.callLater(root.syncBtopConfig);
+        updateTelemetryDemand();
+    }
+    Component.onDestruction: {
+        if (_telemetryService)
+            _telemetryService.setTelemetryDemand(root, false);
+    }
     onOpenedChanged: {
         if (opened) {
             showMain();
@@ -526,7 +547,6 @@ Panel {
         customIconInvalid: root.customIconInvalid
         cpuUsage: root.activity ? root.activity.cpuUsage : 0
         memoryUsage: root.activity ? root.activity.memoryUsage : 0
-        activityAvailable: root.activity && root.activity.available
         foreground: root.foreground
         fontFamily: root.fontFamily
         onIconLoadFailed: function (failed) {

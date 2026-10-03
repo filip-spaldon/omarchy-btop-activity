@@ -7,6 +7,7 @@ QtObject {
   id: root
 
   property int updateMs: 2000
+  property bool active: false
   property real cpuUsage: -1
   property real memoryUsage: -1
   property real memoryUsed: -1
@@ -36,8 +37,23 @@ QtObject {
   property real _discoverAfter: 0
   property bool _rediscover: true
 
+  onActiveChanged: if (active) Qt.callLater(resume)
+
+  function resume() {
+    if (!active) return
+    _previousCpu = null
+    _state.fdPrevious = null
+    sample()
+  }
+
+  function sample() {
+    if (!active) return
+    sampleBase()
+    sampleSensors()
+  }
+
   function discover() {
-    if (discoveryProcess.running || sensorProcess.running ||
+    if (!active || discoveryProcess.running || sensorProcess.running ||
         _snapshot !== null || Date.now() < _discoverAfter) return
     _rediscover = false
     _discoverAfter = Date.now() + 1000
@@ -45,6 +61,7 @@ QtObject {
   }
 
   function sampleBase() {
+    if (!active) return
     var now = Date.now()
     if (_lastSample && (now < _lastSample ||
         now - _lastSample > Math.max(5000, updateMs * 3))) {
@@ -70,7 +87,7 @@ QtObject {
   }
 
   function sampleSensors() {
-    if (discoveryProcess.running || sensorProcess.running ||
+    if (!active || discoveryProcess.running || sensorProcess.running ||
         !_inventory.raw) return
     sensorProcess.command = [
       "timeout", "--kill-after=0.5s", "2s",
@@ -80,7 +97,7 @@ QtObject {
   }
 
   function sampleBackend() {
-    if (_discardSnapshot) {
+    if (!active || _discardSnapshot) {
       _snapshot = null
       _job = null
       _discardSnapshot = false
@@ -119,6 +136,11 @@ QtObject {
   }
 
   function finishBackend(exitCode, raw, error) {
+    if (!active) {
+      _snapshot = null
+      _job = null
+      return
+    }
     if (exitCode === 75) {
       raw.trim().split("\n").forEach(function(line) {
         var path = line.split("\t")[1]
@@ -189,9 +211,11 @@ QtObject {
     environment: ({ LC_ALL: "C" })
     stdout: StdioCollector { id: statsOutput; waitForEnd: true }
     onExited: function(code) {
+      if (!root.active) return
       var sample = Model.stats(code === 0 ? statsOutput.text : "", root._previousCpu)
       root._previousCpu = sample.previous
-      root.cpuUsage = sample.cpu
+      // Priming counters should not blank the last visible reading.
+      if (sample.cpu >= 0 || sample.previous === null) root.cpuUsage = sample.cpu
       root.memoryUsed = sample.used
       root.memoryTotal = sample.total
       root.memoryUsage = sample.total > 0 ? sample.used / sample.total * 100 : -1
@@ -206,6 +230,10 @@ QtObject {
     environment: ({ LC_ALL: "C" })
     stdout: StdioCollector { id: discoveryOutput; waitForEnd: true }
     onExited: function(code) {
+      if (!root.active) {
+        root._rediscover = true
+        return
+      }
       if (code !== 0) {
         root._rediscover = true
         root._discoverAfter = Date.now() + 30000
@@ -230,6 +258,7 @@ QtObject {
     environment: ({ LC_ALL: "C" })
     stdout: StdioCollector { id: sensorOutput; waitForEnd: true }
     onExited: function(code) {
+      if (!root.active) return
       if (root._discardSnapshot) {
         if (root._snapshot === null) {
           root._discardSnapshot = false
@@ -293,20 +322,22 @@ QtObject {
     }
   }
 
+  // Two quick readings establish CPU usage before the delayed tooltip opens.
+  property Timer warmupTimer: Timer {
+    interval: 100
+    running: root.active
+    onTriggered: root.sample()
+  }
   property Timer sampleTimer: Timer {
     interval: root.updateMs
     repeat: true
-    running: true
-    triggeredOnStart: true
-    onTriggered: {
-      root.sampleBase()
-      root.sampleSensors()
-    }
+    running: root.active && !root.warmupTimer.running
+    onTriggered: root.sample()
   }
   property Timer discoveryTimer: Timer {
     interval: 30000
     repeat: true
-    running: true
+    running: root.active
     onTriggered: {
       root._rediscover = true
       root.discover()

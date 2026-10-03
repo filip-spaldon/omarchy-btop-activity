@@ -54,12 +54,14 @@ The plugin keeps a short list of useful controls before opening btop:
 | More plugin settings   | opens the advanced settings file         |
 
 For the update interval, press Enter or click the value to edit it. Left/Right
-(or `h`/`l`) change it by 1 ms. Up/Down (or `k`/`j`) move through the presets
-in [`settings.toml`](#settingstoml) while still letting you type any value in
+(or `h`/`l`) change it by 1 ms. Up/Down (or `k`/`j`) move through the presets in
+[`settings.toml`](#settingstoml) while still letting you type any value in
 btop's full range. From a custom value, they jump to the next preset above or
-below it and wrap around at the ends. The selected interval drives CPU, RAM,
-and GPU sampling together. Hardware reads run asynchronously; a slow reader
-finishes before another copy is started, rather than building up a queue.
+below it and wrap around at the ends.
+
+Plugin readings refresh while hovering over the icon or viewing its menu, then
+pause when idle. CPU, RAM, and GPU use the selected interval after a quick
+initial refresh.
 
 Edit `~/.config/hypr/bindings.lua` directly, or select **Keybindings** in the
 plugin settings to open it. The button prefers Neovim, jumping to an existing
@@ -97,9 +99,8 @@ The two advanced settings below use a separate user-owned file.
 
 Under **Plugin**, choose whether btop opens tiled or floating or open its
 keybindings. The window mode applies to both left-click and Help. Floating is
-the default and restores Omarchy's centered 875 x 600 window size when
-selected. Under **btop**, live settings include whether btop paints its own
-background.
+the default and restores Omarchy's centered 875 x 600 window size when selected.
+Under **btop**, live settings include whether btop paints its own background.
 
 ### settings.toml
 
@@ -109,9 +110,9 @@ when set. If it is missing, opening the plugin popup asks whether to create it:
 
 - **Yes** creates a copy of `settings.example.toml`, without replacing an
   existing file or opening an editor automatically.
-- **No** creates nothing and keeps using the built-in defaults. The prompt
-  stays dismissed until the shell restarts or an existing settings file is
-  deleted. There is no migration or separate preference file to manage.
+- **No** creates nothing and keeps using the built-in defaults. The prompt stays
+  dismissed until the shell restarts or an existing settings file is deleted.
+  There is no migration or separate preference file to manage.
 
 At the bottom of the settings popup, **More plugin settings > Open settings
 file** opens your copy in Omarchy's configured editor. If the file is missing,
@@ -126,18 +127,18 @@ poll_intervals = [250, 500, 1000, 2000, 5000]
 ```
 
 - `left_click`: `"toggle"` is the default and closes the plugin's btop window
-  when it is already open; `"open"` launches or focuses instead. This affects only
-  the bar icon's left-click. The popup's **start [b]top** action always opens or
-  focuses btop.
+  when it is already open; `"open"` launches or focuses instead. This affects
+  only the bar icon's left-click. The popup's **start [b]top** action always
+  opens or focuses btop.
 - `poll_intervals`: the preset ladder for the update-interval arrows, in
   milliseconds, not additional polling loops. Use a nonempty list of whole
   numbers between 100 and 86400000. Values are sorted and duplicates removed.
 
 Keep each setting on one line. Blank lines and `#` comments are supported;
 omitted settings use their shipped defaults. Valid saves apply immediately,
-without restarting the shell. Invalid values, duplicate keys, unknown keys,
-and malformed entries show an error below the editor button and leave the
-session's last valid settings unchanged. Removing the file restores defaults.
+without restarting the shell. Invalid values, duplicate keys, unknown keys, and
+malformed entries show an error below the editor button and leave the session's
+last valid settings unchanged. Removing the file restores defaults.
 
 The toggle script can also be bound directly, so one key opens and closes btop:
 
@@ -278,10 +279,10 @@ dedicated VRAM. The plugin currently selects this CLI only for `i915`, not `xe`.
 
 For Intel usage, the source order is a kernel `gpu_busy_percent` counter,
 `intel_gpu_top` on i915, Fastfetch, XPU-SMI, and finally DRM `fdinfo`. Missing
-or failed readers are skipped. The `fdinfo` fallback covers only clients
-visible to the current user and may not represent the whole device. Btop's own
-GPU panel uses an embedded i915 PMU reader. Any `CAP_PERFMON` granted to the
-btop executable applies only to btop and cannot be reused by the plugin.
+or failed readers are skipped. The `fdinfo` fallback covers only clients visible
+to the current user and may not represent the whole device. Btop's own GPU panel
+uses an embedded i915 PMU reader. Any `CAP_PERFMON` granted to the btop
+executable applies only to btop and cannot be reused by the plugin.
 
 ### NVIDIA GPUs
 
@@ -344,10 +345,9 @@ backend's installation, permissions, or live readings on suitable hardware.
 ## Config safety and troubleshooting
 
 The plugin stores popup choices in Omarchy's `shell.json` and advanced choices
-in the user-owned `settings.toml` described above. It generates its private
-btop config at
-`$XDG_RUNTIME_DIR/omarchy-btop-activity/btop.conf`. It verifies that the
-runtime directory is available, user-owned, and writable before creating its
+in the user-owned `settings.toml` described above. It generates its private btop
+config at `$XDG_RUNTIME_DIR/omarchy-btop-activity/btop.conf`. It verifies that
+the runtime directory is available, user-owned, and writable before creating its
 own private directory. The normal user `btop.conf` is never read or written.
 
 The runtime file is created from Omarchy's packaged btop config. Quickshell
@@ -357,8 +357,8 @@ reuses it and updates the btop settings stored in `shell.json`. Otherwise, it
 creates the file when needed.
 
 Omarchy plugins have no uninstall hook. Removing the plugin can leave this
-temporary directory until the user runtime is cleared. That often happens at
-the final logout and always happens on reboot; user lingering can delay it. The
+temporary directory until the user runtime is cleared. That often happens at the
+final logout and always happens on reboot; user lingering can delay it. The
 leftover is harmless: normal btop never reads it, and reinstalling the plugin
 reuses it. No marker or backup files are created.
 
@@ -375,8 +375,8 @@ omarchy plugin remove ilyazar.btop
 
 Removing the plugin stops using its private btop settings. It does not remove
 btop or change btop's normal configuration. Your advanced settings file is
-preserved. The temporary generated btop config may remain until the user
-runtime is cleared.
+preserved. The temporary generated btop config may remain until the user runtime
+is cleared.
 
 ## Roadmap and releases
 
@@ -428,9 +428,7 @@ Planned work stays at the top. Shipped entries come from
 
 ## Development
 
-The installed plugin is a regular Git checkout; symlinked plugin folders are
-not supported. Install it using [Quickstart](#quickstart), then edit that
-checkout directly. After making changes, validate and reload it:
+Edit the checkout used by the installed plugin, then validate and reload it:
 
 ```bash
 cd ~/.config/omarchy/plugins/ilyazar.btop
@@ -439,27 +437,6 @@ omarchy-shell shell rescanPlugins
 ```
 
 If a reload still shows an old component, run `omarchy restart shell`.
-
-### Telemetry overhead
-
-Run the optional benchmark against the current implementation:
-
-```bash
-python3 tests/benchmark_telemetry.py --seconds 20 --json /tmp/btop-telemetry.json
-```
-
-It tests 100, 250, 500, 1000, 2000, and 5000 ms, with a three-second warmup for
-each run. CPU usage includes the telemetry engine and its child readers;
-100% means one logical CPU. Memory is reported in MiB, using sampled total
-process-tree PSS to account for shared pages. Brief peaks between samples can
-be missed; JSON also includes RSS measurements. The final CPU accounting
-includes shutdown, while peak individual-process RSS includes startup.
-
-This is an isolated, headless Quickshell telemetry engine. Its memory includes
-Qt/Quickshell's baseline, not just the incremental cost inside the existing
-Omarchy shell. It excludes bar rendering and does not measure power draw.
-Results depend on the GPU backend and other work running on the machine.
-The benchmark does not edit plugin settings or launch btop.
 
 ## License
 

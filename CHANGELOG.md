@@ -8,6 +8,11 @@ Notable changes to btop Activity are documented here.
 - Toggle btop on bar left-click by default, with or without a settings file.
 - Use one selected polling interval for CPU, RAM, and GPU telemetry, without
   a separate one-second GPU minimum. Add a CPU and memory benchmark.
+- Sample only while hovering over the icon or viewing its menu. Take an
+  immediate reading and another after 100 ms, then use the selected interval.
+  Stop polling when idle, including with the Meters icon, and coordinate demand
+  across monitors. Keep the last valid CPU reading during warmup and avoid
+  dimming the icon when sampling starts.
 - Give plugin-launched btop its own window identity, so toggle closes only its
   window and leaves ordinary btop windows alone. Preserve that identity across
   floating/tiled mode changes, Start, and Help.
