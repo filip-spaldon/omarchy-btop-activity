@@ -52,7 +52,10 @@ for class in org.omarchy.btop org.omarchy.btop_tiled; do
   printf '[{"class": "%s", "address": "0xabc"}]' "$class" >"$CLIENTS"
   run_toggle org.omarchy.btop "$RUNTIME_CONFIG"
   grep -Fq 'close hl.dsp.window.close({ window = "address:0xabc" })' "$LOG"
-  ! grep -q '^launch' "$LOG"
+  if grep -q '^launch' "$LOG"; then
+    printf 'unexpected launch after closing btop\n' >&2
+    exit 1
+  fi
 done
 
 # No window: launch with the arguments the widget passes.

@@ -19,3 +19,4 @@ tests/test_runtime_config_preparation.sh
 node --test tests/test_telemetry.mjs
 "$QMLTESTRUNNER" -input "$TEST_DIR" -import "$PLUGIN_ROOT" \
   -platform offscreen -o -,txt
+tests/test_toggle_btop.sh
