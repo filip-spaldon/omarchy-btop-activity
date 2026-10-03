@@ -217,7 +217,7 @@ Panel {
 
     function launchBtop() {
         close();
-        launchWhenConfigReady(leftClick === "toggle" ? "toggle" : "btop");
+        launchWhenConfigReady("btop");
     }
 
     function launchBtopHelp() {
@@ -509,10 +509,12 @@ Panel {
         }
         onPressed: function (buttonCode) {
             hoverTooltip.dismiss();
-            if (buttonCode === Qt.LeftButton)
-                root.launchBtop();
-            else if (buttonCode === Qt.RightButton)
+            if (buttonCode === Qt.LeftButton) {
+                root.close();
+                root.launchWhenConfigReady(root.leftClick === "toggle" ? "toggle" : "btop");
+            } else if (buttonCode === Qt.RightButton) {
                 root.toggle();
+            }
         }
     }
 
