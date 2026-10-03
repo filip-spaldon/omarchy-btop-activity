@@ -11,9 +11,9 @@ trap 'rm -rf -- "$TEMP_ROOT"' EXIT
 readonly MOCK_BIN="$TEMP_ROOT/bin"
 readonly LOG="$TEMP_ROOT/calls.log"
 readonly CLIENTS="$TEMP_ROOT/clients.json"
-readonly RUNTIME_CONFIG="$TEMP_ROOT/runtime/ilyazar-btop.conf"
+readonly RUNTIME_CONFIG="$TEMP_ROOT/runtime/omarchy-btop-activity/btop.conf"
 
-mkdir -p "$MOCK_BIN" "$TEMP_ROOT/runtime" "$TEMP_ROOT/config/omarchy"
+mkdir -p "$MOCK_BIN" "$(dirname "$RUNTIME_CONFIG")" "$TEMP_ROOT/config/omarchy"
 
 cat >"$MOCK_BIN/hyprctl" <<MOCK
 #!/bin/bash

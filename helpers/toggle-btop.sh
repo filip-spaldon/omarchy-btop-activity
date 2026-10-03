@@ -20,7 +20,7 @@ if [[ -z $app_id ]]; then
     "${XDG_CONFIG_HOME:-$HOME/.config}/omarchy/shell.json" 2>/dev/null | head -n 1 || true)
   app_id=org.omarchy.btop
   [[ ${mode:-} == Tiled ]] && app_id=org.omarchy.btop_tiled
-  runtime="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/ilyazar-btop.conf"
+  runtime="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/omarchy-btop-activity/btop.conf"
   if [[ -f $runtime ]]; then config=$runtime; fi
 fi
 
