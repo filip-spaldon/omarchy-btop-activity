@@ -28,6 +28,7 @@ Panel {
     property string pendingLaunch: ""
     property bool configSynced: false
     property string leftClick: Settings.defaults.leftClick
+    property color shortcutColor: Color.foreground
 
     readonly property var activity: bar && bar.shell ? bar.shell.serviceFor(moduleName) : null
     readonly property color foreground: bar ? bar.barForeground : Color.foreground
@@ -88,6 +89,27 @@ Panel {
         path: root.localPath(Qt.resolvedUrl("settings.toml"))
         printErrors: false
         onLoaded: root.applySettings(text())
+    }
+
+    FileView {
+        id: themeColorsFile
+        path: Color.currentThemePath + "/colors.toml"
+        onLoaded: {
+            var yellow = text().match(/^\s*(?:yellow|color3)\s*=\s*["']?(#[0-9A-Fa-f]{6})/m);
+            if (yellow)
+                root.shortcutColor = yellow[1];
+            else
+                console.warn("btop: theme colors.toml has no yellow color");
+        }
+    }
+
+    Connections {
+        target: Color
+        function onShellValuesChanged() { themeColorsFile.reload(); }
+    }
+
+    function shortcutHint(key) {
+        return "<font color=\"" + shortcutColor + "\">[" + key + "]</font>";
     }
 
     function applySettings(text) {
@@ -630,14 +652,14 @@ Panel {
                     spacing: Style.space(6)
 
                     MenuRow {
-                        label: "Start btop"
+                        label: "start " + root.shortcutHint("b") + "top"
                         selectedIcon: true
                         navigationIndex: 0
                         onClicked: root.launchBtop()
                     }
 
                     MenuRow {
-                        label: "Settings"
+                        label: root.shortcutHint("s") + "ettings"
                         iconText: ""
                         value: "›"
                         navigationIndex: 1
@@ -649,8 +671,7 @@ Panel {
                     }
 
                     MenuRow {
-                        label: "Help"
-                        iconText: "?"
+                        label: root.shortcutHint("?") + " Help"
                         navigationIndex: 2
                         onClicked: root.launchBtopHelp()
                     }
@@ -989,6 +1010,7 @@ Panel {
 
             Text {
                 text: row.label
+                textFormat: Text.StyledText
                 color: root.foreground
                 font.family: root.fontFamily
                 font.pixelSize: Style.font.body
