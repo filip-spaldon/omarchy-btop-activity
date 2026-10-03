@@ -8,7 +8,6 @@ import qs.Commons
 import qs.Ui
 import "components" as Components
 import "lib/shortcuts" as Shortcuts
-import "lib/Settings.js" as Settings
 import "lib/UpdateInterval.js" as UpdateInterval
 import "lib/BtopHumanizer.js" as BtopHumanizer
 
@@ -20,6 +19,7 @@ Panel {
     property string page: "main"
     property int mainIndex: 0
     property int settingsIndex: 0
+    property int creationIndex: 0
     property string customIconDraft: ""
     property string customIconError: ""
     property bool customIconLoadFailed: false
@@ -27,7 +27,7 @@ Panel {
     property bool updateEditing: false
     property string pendingLaunch: ""
     property bool configSynced: false
-    property string leftClick: Settings.defaults.leftClick
+    readonly property string leftClick: pluginSettings.values.leftClick
     property color shortcutColor: Color.foreground
 
     readonly property var activity: bar && bar.shell ? bar.shell.serviceFor(moduleName) : null
@@ -57,18 +57,10 @@ Panel {
     })
     readonly property string gpuSummary: {
         var gpu = gpus.length === 1 ? gpus[0] : defaultRendererGpu;
-        return gpu ? "GPU " + (gpu.status === "sleeping" ? "asleep"
-            : percentage(gpu.usage)) : gpus.length + " GPUs";
+        return gpu ? "GPU " + (gpu.status === "sleeping" ? "asleep" : percentage(gpu.usage)) : gpus.length + " GPUs";
     }
-    readonly property string cpuTemperatureSuffix: " • "
-        + temperature(activity ? activity.cpuTemperature : null)
-    readonly property string tooltipMetrics: [
-        customIconInvalid ? "Custom icon"
-            : metricPrefix("RAM") + percentage(activity ? activity.memoryUsage : null),
-        customIconInvalid ? "Unavailable"
-            : metricPrefix("CPU") + percentage(activity ? activity.cpuUsage : null)
-                + cpuTemperatureSuffix
-    ].concat(gpus.length ? gpuRows() : ["GPU: --"]).join("\n")
+    readonly property string cpuTemperatureSuffix: " • " + temperature(activity ? activity.cpuTemperature : null)
+    readonly property string tooltipMetrics: [customIconInvalid ? "Custom icon" : metricPrefix("RAM") + percentage(activity ? activity.memoryUsage : null), customIconInvalid ? "Unavailable" : metricPrefix("CPU") + percentage(activity ? activity.cpuUsage : null) + cpuTemperatureSuffix].concat(gpus.length ? gpuRows() : ["GPU: --"]).join("\n")
     readonly property var sortingChoices: ["cpu lazy", "cpu direct", "memory", "program"]
     readonly property int customPathIndex: iconStyle === "Custom" ? 1 : -1
     readonly property int keybindingsIndex: iconStyle === "Custom" ? 2 : 1
@@ -77,7 +69,8 @@ Panel {
     readonly property int treeIndex: updateIndex + 1
     readonly property int sortingIndex: updateIndex + 2
     readonly property int backgroundIndex: updateIndex + 3
-    readonly property int backIndex: updateIndex + 4
+    readonly property int moreSettingsIndex: backgroundIndex + 1
+    readonly property int backIndex: moreSettingsIndex + 1
     readonly property int settingsCount: backIndex + 1
 
     Shortcuts.HyprlandBinding {
@@ -85,10 +78,14 @@ Panel {
         actionDescription: "Activity"
     }
 
-    property FileView settingsFile: FileView {
-        path: root.localPath(Qt.resolvedUrl("settings.toml"))
-        printErrors: false
-        onLoaded: root.applySettings(text())
+    property PluginSettings pluginSettings: PluginSettings {}
+
+    Connections {
+        target: root.pluginSettings
+        function onMissingChanged() {
+            if (root.opened && root.page === "main" && root.pluginSettings.missing && !root.pluginSettings.creationDismissed)
+                root.openPluginSettings();
+        }
     }
 
     FileView {
@@ -105,17 +102,13 @@ Panel {
 
     Connections {
         target: Color
-        function onShellValuesChanged() { themeColorsFile.reload(); }
+        function onShellValuesChanged() {
+            themeColorsFile.reload();
+        }
     }
 
     function shortcutHint(key) {
         return "<font color=\"" + shortcutColor + "\">[" + key + "]</font>";
-    }
-
-    function applySettings(text) {
-        var settings = Settings.parse(text);
-        UpdateInterval.usePresets(settings.pollIntervals);
-        leftClick = settings.leftClick;
     }
 
     function intSetting(name, fallback, minimum, maximum) {
@@ -145,21 +138,18 @@ Panel {
     }
 
     function percentage(value) {
-        return typeof value === "number" && value >= 0
-            ? padLeft(Math.round(value), 3) + "%" : "  --";
+        return typeof value === "number" && value >= 0 ? padLeft(Math.round(value), 3) + "%" : "  --";
     }
 
     function temperature(value) {
-        return typeof value === "number" && isFinite(value)
-            ? padLeft(Math.round(value), 3) + "°C" : padLeft("--", 3);
+        return typeof value === "number" && isFinite(value) ? padLeft(Math.round(value), 3) + "°C" : padLeft("--", 3);
     }
 
     function gpuRows() {
         var usageWidth = 4;
         var temperatureWidth = 5;
         var rows = gpus.map(function (gpu, index) {
-            var memoryLabel = gpu.memoryKind === "shared" ? "shared GPU"
-                : gpu.memoryKind === "dedicated" ? "vRAM" : "GPU memory";
+            var memoryLabel = gpu.memoryKind === "shared" ? "shared GPU" : gpu.memoryKind === "dedicated" ? "vRAM" : "GPU memory";
             var usage = percentage(gpu.usage);
             var heat = temperature(gpu.temperature);
             usageWidth = Math.max(usageWidth, usage.length);
@@ -169,15 +159,11 @@ Panel {
                 sleeping: gpu.status === "sleeping",
                 usage: usage,
                 temperature: heat,
-                memory: gpu.memoryKind === "none" ? "Sys. RAM shared (w/ CPU)"
-                    : BtopHumanizer.vramText(gpu.memoryUsed, gpu.memoryTotal, memoryLabel)
+                memory: gpu.memoryKind === "none" ? "Sys. RAM shared (w/ CPU)" : BtopHumanizer.vramText(gpu.memoryUsed, gpu.memoryTotal, memoryLabel)
             };
         });
         return rows.map(function (row) {
-            return row.sleeping ? row.prefix + "asleep"
-                : row.prefix + padRight(row.usage, usageWidth)
-                    + " • " + padRight(row.temperature, temperatureWidth)
-                    + " • " + row.memory;
+            return row.sleeping ? row.prefix + "asleep" : row.prefix + padRight(row.usage, usageWidth) + " • " + padRight(row.temperature, temperatureWidth) + " • " + row.memory;
         });
     }
 
@@ -232,9 +218,7 @@ Panel {
     function execBtopHelp() {
         if (!activity)
             return;
-        Quickshell.execDetached([
-            "bash", helpScript, btopAppId, activity.configPath
-        ]);
+        Quickshell.execDetached(["bash", helpScript, btopAppId, activity.configPath]);
     }
 
     function launchBtop() {
@@ -250,6 +234,25 @@ Panel {
     function launchKeybindings() {
         close();
         Quickshell.execDetached(["bash", keybindingsScript]);
+    }
+
+    function openPluginSettings() {
+        if (pluginSettings.missing) {
+            creationIndex = 0;
+            page = "createSettings";
+        } else {
+            pluginSettings.run("edit");
+        }
+    }
+
+    function answerSettingsCreation(accepted) {
+        if (pluginSettings.busy)
+            return;
+        pluginSettings.creationDismissed = true;
+        if (accepted)
+            pluginSettings.run("create");
+        showSettings();
+        settingsIndex = moreSettingsIndex;
     }
 
     function showSettings() {
@@ -325,12 +328,12 @@ Panel {
     }
 
     function ladderUpdateDraft(direction) {
-        updateDraft = String(UpdateInterval.ladder(currentUpdateDraft(), direction));
+        updateDraft = String(UpdateInterval.ladder(currentUpdateDraft(), direction, pluginSettings.values.pollIntervals));
         updateField.selectAll();
     }
 
     function clickUpdateLadder(direction) {
-        var next = UpdateInterval.ladder(currentUpdateDraft(), direction);
+        var next = UpdateInterval.ladder(currentUpdateDraft(), direction, pluginSettings.values.pollIntervals);
         applyUpdateValue(next);
         if (updateEditing) {
             updateField.forceActiveFocus();
@@ -342,8 +345,7 @@ Panel {
         if (!activity || configSynced || activity.configBusy)
             return;
         configSynced = true;
-        if (!activity.setConfig(updateMs, procSorting, procTree,
-                                transparentBackground))
+        if (!activity.setConfig(updateMs, procSorting, procTree, transparentBackground))
             configSynced = false;
     }
 
@@ -397,8 +399,7 @@ Panel {
             return;
         }
         if (index === backgroundIndex) {
-            persistPluginSetting("transparentBackground",
-                                 !transparentBackground);
+            persistPluginSetting("transparentBackground", !transparentBackground);
             return;
         }
         if (!activity || activity.configBusy)
@@ -406,7 +407,7 @@ Panel {
         if (index === updateIndex) {
             if (!updateAvailable)
                 return;
-            applyUpdateValue(UpdateInterval.ladder(updateMs, direction));
+            applyUpdateValue(UpdateInterval.ladder(updateMs, direction, pluginSettings.values.pollIntervals));
         } else if (index === sortingIndex) {
             persistPluginSetting("procSorting", nextChoice(sortingChoices, procSorting, direction));
         } else if (index === treeIndex) {
@@ -415,6 +416,11 @@ Panel {
     }
 
     function moveCursor(dx, dy) {
+        if (page === "createSettings") {
+            if (dx !== 0 || dy !== 0)
+                creationIndex = 1 - creationIndex;
+            return;
+        }
         if (page === "main") {
             if (dy !== 0)
                 mainIndex = (mainIndex + dy + 3) % 3;
@@ -422,11 +428,15 @@ Panel {
         }
         if (dy !== 0)
             settingsIndex = (settingsIndex + dy + settingsCount) % settingsCount;
-        if (dx !== 0 && settingsIndex !== customPathIndex && settingsIndex !== keybindingsIndex && settingsIndex < backIndex)
+        if (dx !== 0 && settingsIndex !== customPathIndex && settingsIndex !== keybindingsIndex && settingsIndex < moreSettingsIndex)
             cycleSetting(settingsIndex, dx > 0 ? 1 : -1);
     }
 
     function activateCursor() {
+        if (page === "createSettings") {
+            answerSettingsCreation(creationIndex === 0);
+            return;
+        }
         if (page === "main") {
             if (mainIndex === 0)
                 launchBtop();
@@ -440,6 +450,8 @@ Panel {
             showMain();
         else if (settingsIndex === keybindingsIndex)
             launchKeybindings();
+        else if (settingsIndex === moreSettingsIndex)
+            openPluginSettings();
         else if (settingsIndex === customPathIndex)
             customIconField.forceActiveFocus();
         else if (settingsIndex === updateIndex)
@@ -449,7 +461,9 @@ Panel {
     }
 
     function closeOrBack() {
-        if (page === "settings")
+        if (page === "createSettings")
+            answerSettingsCreation(false);
+        else if (page === "settings")
             showMain();
         else
             close();
@@ -493,6 +507,8 @@ Panel {
     onOpenedChanged: {
         if (opened) {
             showMain();
+            if (pluginSettings.missing && !pluginSettings.creationDismissed)
+                openPluginSettings();
             Qt.callLater(function () {
                 keyCatcher.forceActiveFocus();
             });
@@ -546,8 +562,7 @@ Panel {
         bar: root.bar
         fontFamily: root.fontFamily
         metrics: root.tooltipMetrics
-        hovered: button.tooltipHovered && !root.opened
-            && !(root.bar && root.bar.activePopout)
+        hovered: button.tooltipHovered && !root.opened && !(root.bar && root.bar.activePopout)
     }
 
     KeyboardPanel {
@@ -557,7 +572,7 @@ Panel {
         bar: root.bar
         open: root.opened
         focusTarget: keyCatcher
-        contentWidth: popup.fittedContentWidth(Style.space(340))
+        contentWidth: popup.fittedContentWidth(Style.space(root.page === "createSettings" ? 760 : 340))
         contentHeight: popup.fittedContentHeight(content.implicitHeight)
 
         PanelKeyCatcher {
@@ -570,10 +585,18 @@ Panel {
             onActivateRequested: root.activateCursor()
             onCloseRequested: root.closeOrBack()
             onTabRequested: function (direction) {
-                root.switchPanel(direction);
+                if (root.page === "createSettings")
+                    root.moveCursor(direction, 0);
+                else
+                    root.switchPanel(direction);
             }
             onTextKey: function (text) {
                 var key = text.toLowerCase();
+                if (root.page === "createSettings") {
+                    if (key === "y" || key === "n")
+                        root.answerSettingsCreation(key === "y");
+                    return;
+                }
                 if (key === "b")
                     root.launchBtop();
                 else if (key === "s")
@@ -626,11 +649,8 @@ Panel {
 
                         Text {
                             width: parent.width
-                            text: (root.page === "main"
-                                ? "CPU " + root.percentage(root.activity ? root.activity.cpuUsage : null)
-                                    + " · RAM " + root.percentage(root.activity ? root.activity.memoryUsage : null)
-                                    + " · " + root.gpuSummary
-                                : "Changes apply to running btop sessions").toUpperCase()
+                            visible: root.page !== "createSettings"
+                            text: (root.page === "main" ? "CPU " + root.percentage(root.activity ? root.activity.cpuUsage : null) + " · RAM " + root.percentage(root.activity ? root.activity.memoryUsage : null) + " · " + root.gpuSummary : "Changes apply to running btop sessions").toUpperCase()
                             textFormat: Text.PlainText
                             color: root.dim
                             font.family: root.fontFamily
@@ -644,6 +664,46 @@ Panel {
 
                 PanelSeparator {
                     foreground: root.foreground
+                }
+
+                Column {
+                    visible: root.page === "createSettings"
+                    width: parent.width
+                    spacing: Style.space(16)
+
+                    Text {
+                        width: parent.width
+                        text: "Since v0.2.5, btop ships a default settings file.\n" + "Do you want to create one at\n" + root.pluginSettings.path + "\n" + " (recommended; you can always delete it later)?"
+                        textFormat: Text.PlainText
+                        color: root.foreground
+                        font.family: root.fontFamily
+                        font.pixelSize: Style.font.body
+                        wrapMode: Text.Wrap
+                    }
+
+                    Row {
+                        anchors.right: parent.right
+                        spacing: Style.space(10)
+
+                        Repeater {
+                            model: ["Yes", "No"]
+                            delegate: Button {
+                                required property int index
+                                required property string modelData
+                                text: modelData
+                                bordered: true
+                                hasCursor: root.creationIndex === index
+                                enabled: !root.pluginSettings.busy
+                                foreground: root.foreground
+                                fontFamily: root.fontFamily
+                                onHovered: function (hovered) {
+                                    if (hovered)
+                                        root.creationIndex = index;
+                                }
+                                onClicked: root.answerSettingsCreation(index === 0)
+                            }
+                        }
+                    }
                 }
 
                 Column {
@@ -924,9 +984,7 @@ Panel {
 
                     MenuRow {
                         label: "Transparent background"
-                        value: root.activity && root.activity.configReady
-                            ? (root.transparentBackground ? "On" : "Off")
-                            : "Loading…"
+                        value: root.activity && root.activity.configReady ? (root.transparentBackground ? "On" : "Off") : "Loading…"
                         enabled: root.activity && !root.activity.configBusy
                         navigationIndex: root.backgroundIndex
                         onClicked: root.cycleSetting(root.backgroundIndex, 1)
@@ -947,6 +1005,34 @@ Panel {
                         width: parent.width
                         text: "h/l or Left/Right: 1 ms; k/j or Up/Down: presets"
                         color: root.dim
+                        font.family: root.fontFamily
+                        font.pixelSize: Style.font.caption
+                        wrapMode: Text.WordWrap
+                    }
+
+                    PanelSeparator {
+                        foreground: root.foreground
+                    }
+
+                    PanelSectionHeader {
+                        text: "MORE PLUGIN SETTINGS"
+                        foreground: root.foreground
+                        fontFamily: root.fontFamily
+                    }
+
+                    MenuRow {
+                        label: "Open settings file"
+                        enabled: !root.pluginSettings.busy
+                        navigationIndex: root.moreSettingsIndex
+                        onClicked: root.openPluginSettings()
+                    }
+
+                    Text {
+                        visible: root.pluginSettings.error !== ""
+                        width: parent.width
+                        text: root.pluginSettings.error
+                        textFormat: Text.PlainText
+                        color: root.urgent
                         font.family: root.fontFamily
                         font.pixelSize: Style.font.caption
                         wrapMode: Text.WordWrap
@@ -983,8 +1069,7 @@ Panel {
         implicitHeight: Style.space(44)
         foreground: root.foreground
         opacity: enabled ? 1 : 0.55
-        hasCursor: (root.page === "main" ? root.mainIndex : root.settingsIndex)
-            === navigationIndex
+        hasCursor: (root.page === "main" ? root.mainIndex : root.settingsIndex) === navigationIndex
 
         RowLayout {
             anchors.fill: parent

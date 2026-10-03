@@ -24,7 +24,7 @@ hardware. The plugin detects supported tools automatically.
 
 After installation:
 
-- **left-click** bar icon to start/focus btop in the selected window mode
+- **left-click** bar icon to start/close btop in the selected window mode
 - **right-click** bar icon to open the plugin settings
   - choose **Settings** to change plugin and btop options
   - choose **Help** to open built-in help in the selected window mode
@@ -51,6 +51,7 @@ The plugin keeps a short list of useful controls before opening btop:
 | Process tree           | on or off                                |
 | Process sorting        | lazy CPU, direct CPU, memory, or program |
 | Transparent background | on or off                                |
+| More plugin settings   | opens the advanced settings file         |
 
 For the update interval, press Enter or click the value to edit it. Left/Right
 (or `h`/`l`) change it by 1 ms. Up/Down (or `k`/`j`) move through the presets
@@ -89,7 +90,8 @@ Depending on the installed icon themes, useful paths include:
 - `/usr/share/icons/HighContrast/scalable/apps/utilities-system-monitor.svg`
 - `/usr/share/icons/Yaru/scalable/apps/system-monitor-app-symbolic.svg`
 
-Plugin choices are stored in Omarchy's `shell.json` and survive shell restarts.
+Popup controls are stored in Omarchy's `shell.json` and survive shell restarts.
+The two advanced settings below use a separate user-owned file.
 
 Under **Plugin**, choose whether btop opens tiled or floating or open its
 keybindings. The window mode applies to both left-click and Help. Floating is
@@ -99,20 +101,43 @@ background.
 
 ### settings.toml
 
-Two defaults live in the plugin's `settings.toml` rather than in the popup:
+Since v0.2.5, the plugin offers an optional user-owned settings file at
+`~/.config/omarchy/ilyazar.btop/settings.toml`, respecting `XDG_CONFIG_HOME`
+when set. If it is missing, opening the plugin popup asks whether to create it:
 
-| Key              | Default                      | Meaning                            |
-| ---------------- | ---------------------------- | ---------------------------------- |
-| `poll_intervals` | `[250, 500, 1000, 2000, 5000]` | ladder the interval arrows step through |
-| `left_click`     | `"open"`                     | `"open"` or `"toggle"`             |
+- **Yes** creates a copy of `settings.example.toml`, without replacing an
+  existing file or opening an editor automatically.
+- **No** creates nothing and keeps using the built-in defaults. The prompt
+  stays dismissed until the shell restarts or an existing settings file is
+  deleted. There is no migration or separate preference file to manage.
 
-Values outside btop's 100 ms to one day range, and repeated ones, are dropped;
-an unreadable or empty file leaves the defaults above in place. Apply an edit
-with `omarchy restart shell`.
+At the bottom of the settings popup, **More plugin settings > Open settings
+file** opens your copy in Omarchy's configured editor. If the file is missing,
+this button offers the Yes/No prompt again. Plugin updates do not touch your
+copy.
 
-With `left_click = "toggle"`, clicking the widget while btop is open closes the
-window instead of focusing it. The same script can be bound directly, so one
-key both opens and closes btop:
+The shipped defaults are:
+
+```toml
+left_click = "toggle"
+poll_intervals = [250, 500, 1000, 2000, 5000]
+```
+
+- `left_click`: `"toggle"` is the default and closes matching btop windows when
+  they are already open; `"open"` launches or focuses instead. This affects only
+  the bar icon's left-click. The popup's **start [b]top** action always opens or
+  focuses btop.
+- `poll_intervals`: the preset ladder for the update-interval arrows, in
+  milliseconds, not additional polling loops. Use a nonempty list of whole
+  numbers between 100 and 86400000. Values are sorted and duplicates removed.
+
+Keep each setting on one line. Blank lines and `#` comments are supported;
+omitted settings use their shipped defaults. Valid saves apply immediately,
+without restarting the shell. Invalid values, duplicate keys, unknown keys,
+and malformed entries show an error below the editor button and leave the
+session's last valid settings unchanged. Removing the file restores defaults.
+
+The toggle script can also be bound directly, so one key opens and closes btop:
 
 ```lua
 hl.unbind("SUPER + CTRL + T")
@@ -309,8 +334,9 @@ backend's installation, permissions, or live readings on suitable hardware.
 
 ## Config safety and troubleshooting
 
-The plugin stores its choices in Omarchy's `shell.json` and generates its
-private btop config at
+The plugin stores popup choices in Omarchy's `shell.json` and advanced choices
+in the user-owned `settings.toml` described above. It generates its private
+btop config at
 `$XDG_RUNTIME_DIR/omarchy-btop-activity/btop.conf`. It verifies that the
 runtime directory is available, user-owned, and writable before creating its
 own private directory. The normal user `btop.conf` is never read or written.
@@ -339,8 +365,9 @@ omarchy plugin remove ilyazar.btop
 ```
 
 Removing the plugin stops using its private btop settings. It does not remove
-btop or change btop's normal configuration. The temporary generated file may
-remain until the user runtime is cleared.
+btop or change btop's normal configuration. Your advanced settings file is
+preserved. The temporary generated btop config may remain until the user
+runtime is cleared.
 
 ## Roadmap and releases
 

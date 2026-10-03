@@ -4,9 +4,13 @@ Notable changes to btop Activity are documented here.
 
 ## 0.2.5 - 2026-1-03
 
-- Read defaults from a shipped `settings.toml`: `poll_intervals` sets the
-  interval ladder the Update interval arrows step through, and `left_click`
-  chooses whether a left click opens btop or toggles it (@gw7523).
+- Add configurable interval presets and left-click toggle behavior (@gw7523).
+- Toggle btop on bar left-click by default, with or without a settings file.
+- Keep advanced preferences in the user-owned
+  `~/.config/omarchy/ilyazar.btop/settings.toml`, outside the plugin checkout.
+  Offer to create it when missing, or keep built-in defaults if declined.
+  Open it from More plugin settings; valid saves apply live and invalid edits
+  leave the session's last valid settings unchanged.
 - Add `helpers/toggle-btop.sh`, which closes the plugin's btop window when one
   is open and launches btop otherwise. It backs `left_click = "toggle"` and can
   be bound directly, so one key both opens and closes btop (@gw7523).
