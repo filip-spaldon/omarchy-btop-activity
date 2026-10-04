@@ -1,8 +1,9 @@
 # btop activity for Omarchy
 
-Brings btop back to the Omarchy bar to provide a system/activity monitor with
-live CPU, RAM, and GPU usage (also VRAM) and temperatures. Minimal overhead: in
-idle about 1MB usage, CPU <0.02%.
+Brings btop back to the Omarchy bar, with CPU, RAM, GPU usage, VRAM and
+temperature readings. In isolated tests on an Intel Core i7-4790, the widget
+added roughly 10 MiB of RAM while idle; idle telemetry used about 0.2% of one
+logical CPU.
 
 ![btop Activity on the Omarchy desktop](preview.png)
 
