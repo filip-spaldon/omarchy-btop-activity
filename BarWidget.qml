@@ -151,7 +151,7 @@ Panel {
         var usageWidth = 4;
         var temperatureWidth = 5;
         var rows = gpus.map(function (gpu, index) {
-            var memoryLabel = gpu.memoryKind === "shared" ? "shared GPU" : gpu.memoryKind === "dedicated" ? "vRAM" : "GPU memory";
+            var memoryLabel = gpu.memoryKind === "shared" ? "shared GPU" : gpu.memoryKind === "dedicated" ? "VRAM" : "GPU memory";
             var usage = percentage(gpu.usage);
             var heat = temperature(gpu.temperature);
             usageWidth = Math.max(usageWidth, usage.length);
