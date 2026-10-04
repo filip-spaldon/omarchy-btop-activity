@@ -65,25 +65,31 @@ pause when idle. That keeps things lean instead of constantly checking system
 usage in the background.
 
 Edit `~/.config/hypr/bindings.lua` directly, or select **Keybindings** in the
-plugin settings to open it. Omarchy assigns `Super+Ctrl+T` to btop by default.
-To replace it, e.g. with `Super+Ctrl+Alt+g`, add:
+plugin settings to open it. Omarchy uses `Super+Ctrl+T` for ordinary btop. To
+use `Super+Ctrl+Alt+G` for the plugin's toggle action instead, add:
 
 ```lua
 hl.unbind("SUPER + CTRL + T")
-o.bind("SUPER + CTRL + ALT + G", "Activity", { tui = "btop" })
+o.bind("SUPER + CTRL + ALT + G", "Activity", os.getenv("HOME")
+  .. "/.config/omarchy/plugins/ilyazar.btop/helpers/toggle-btop.sh")
+-- for ordinary btop, comment out the two lines above and uncomment this:
+-- o.bind("SUPER + CTRL + ALT + G", "Activity", { tui = "btop" })
 ```
+
+Use `SUPER + CTRL + T` in `o.bind` to keep the original shortcut. For ordinary
+btop instead of the plugin's toggle action, use `{ tui = "btop" }` as the last
+argument.
+
+The toggle shortcut follows the plugin's window mode and leaves ordinary btop
+windows alone.
 
 After Hyprland reloads, the settings row shows the effective shortcut, or
 `Unbound` when no Activity binding remains.
 
 Cycle **Tray icon** through **Meters**, **CPU**, **Pulse**, and **Custom**. The
-default CPU icon follows the bar's normal foreground color. The custom path is
-stored separately, so switching between styles does not discard it. **CPU** is
-the default for new installations.
-
-For **Custom**, enter an absolute path, a `~/path`, or a `file://` URL, then
-press Enter or **Save**. SVG and PNG work well. The plugin renders the file
-as-is and does not recolor it. An invalid path shows `!`.
+custom path is stored separately, so switching between styles does not discard
+it. For **Custom**, enter an absolute path, a `~/path`, or a `file://` URL, then
+press Enter or **Save**. SVG and PNG both work. An invalid path shows `!`.
 
 Depending on the installed icon themes, useful paths include:
 
@@ -91,18 +97,14 @@ Depending on the installed icon themes, useful paths include:
 - `/usr/share/icons/HighContrast/scalable/apps/utilities-system-monitor.svg`
 - `/usr/share/icons/Yaru/scalable/apps/system-monitor-app-symbolic.svg`
 
-Popup controls are stored in Omarchy's `shell.json` and survive shell restarts.
-The two advanced settings below use a separate user-owned file.
-
-Under **Plugin**, choose whether btop opens tiled or floating or open its
-keybindings. The window mode applies to both left-click and Help. Floating is
-the default and restores Omarchy's centered 875 x 600 window size when selected.
-Under **btop**, live settings include whether btop paints its own background.
+Changes made in the settings menu are saved in Omarchy's `shell.json`.
+Left-click behavior and interval presets use the optional `settings.toml` file
+described below.
 
 ### settings.toml
 
 Since v0.2.5, the plugin offers an optional user-owned settings file at
-`~/.config/omarchy/ilyazar.btop/settings.toml`, respecting `XDG_CONFIG_HOME`
+`~/.config/omarchy/ilyazar.btop/settings.toml`, respecting `XDG_CONFIG_HOME`.
 
 At the bottom of the settings popup, **More plugin settings > Open settings
 file** opens your copy in Omarchy's configured editor. If the file is missing,
@@ -119,35 +121,16 @@ poll_intervals = [250, 500, 1000, 2000, 5000]
 - `left_click`: `"toggle"` is the default and closes the plugin's btop window
   when it is already open; `"open"` launches or focuses instead. This affects
   only the bar icon's left-click. The popup's **start [b]top** action always
-  opens or focuses btop.
+  opens or focuses btop
 - `poll_intervals`: the preset ladder for the update-interval arrows, in
   milliseconds, not additional polling loops. Use a nonempty list of whole
-  numbers between 100 and 86400000. Values are sorted and duplicates removed.
+  numbers between 100 and 86400000. Values are sorted and duplicates removed
 
 Keep each setting on one line. Blank lines and `#` comments are supported;
 omitted settings use their shipped defaults. Valid saves apply immediately,
 without restarting the shell. Invalid values, duplicate keys, unknown keys, and
 malformed entries show an error below the editor button and leave the session's
 last valid settings unchanged. Removing the file restores defaults.
-
-The toggle script can also be bound directly, so one key opens and closes btop:
-
-```lua
-hl.unbind("SUPER + CTRL + T")
-o.bind("SUPER + CTRL + T", "Activity", os.getenv("HOME")
-  .. "/.config/omarchy/plugins/ilyazar.btop/helpers/toggle-btop.sh")
-```
-
-Plugin launches use the private window identity `org.omarchy.btop-activity`,
-unchanged between floating and tiled mode. Toggle closes only one such window;
-ordinary btop windows, including those opened by Omarchy's default Activity
-shortcut, are left alone. Start and Help reuse the plugin's window.
-
-Invoked bare like that, the script takes the window mode from `shell.json` and
-uses the plugin's private runtime config. If that config is missing or
-unreadable, it refuses to launch and shows a notification asking you to open
-btop from the plugin first. It never launches btop with the normal user config.
-An existing plugin window can still be closed without its config file.
 
 ## Optional hardware setup
 
