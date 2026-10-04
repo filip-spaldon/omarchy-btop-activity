@@ -23,3 +23,4 @@ tests/test_toggle_btop.sh
 tests/test_plugin_settings_editor.sh
 tests/test_plugin_settings_reload.sh
 tests/test_telemetry_cadence.sh
+node --test tests/test_navigation.mjs

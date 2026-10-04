@@ -17,6 +17,8 @@ Notable changes to btop Activity are documented here.
   without making the icon flicker when sampling resumes.
 - Make GPU readings follow the selected update interval alongside CPU and RAM.
 - Show theme-colored `[b]`, `[s]`, and `[?]` menu shortcut hints.
+- Use `l`/Right to enter Settings and `h`/Left on Back to return to the menu.
+- Keep the menu open when starting btop from it, so settings remain accessible.
 
 ## 0.2.4 - 2026-09-20
 

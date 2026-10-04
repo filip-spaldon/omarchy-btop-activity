@@ -224,7 +224,6 @@ Panel {
     }
 
     function launchBtop() {
-        close();
         launchWhenConfigReady("btop");
     }
 
@@ -431,10 +430,16 @@ Panel {
         if (page === "main") {
             if (dy !== 0)
                 mainIndex = (mainIndex + dy + 3) % 3;
+            if (dx > 0 && mainIndex === 1)
+                showSettings();
             return;
         }
         if (dy !== 0)
             settingsIndex = (settingsIndex + dy + settingsCount) % settingsCount;
+        if (dx < 0 && settingsIndex === backIndex) {
+            showMain();
+            return;
+        }
         if (dx !== 0 && settingsIndex !== customPathIndex && settingsIndex !== keybindingsIndex && settingsIndex < moreSettingsIndex)
             cycleSetting(settingsIndex, dx > 0 ? 1 : -1);
     }
