@@ -58,20 +58,15 @@ The plugin keeps a short list of useful controls before opening btop:
 For the update interval, press Enter or click the value to edit it. Left/Right
 (or `h`/`l`) change it by 1 ms. Up/Down (or `k`/`j`) move through the presets in
 [`settings.toml`](#settingstoml) while still letting you type any value in
-btop's full range. From a custom value, they jump to the next preset above or
-below it and wrap around at the ends.
+btop's full range.
 
 Plugin readings refresh while hovering over the icon or viewing its menu, then
-pause when idle. CPU, RAM, and GPU use the selected interval after a quick
-initial refresh.
+pause when idle. That keeps things lean instead of constantly checking system
+usage in the background.
 
 Edit `~/.config/hypr/bindings.lua` directly, or select **Keybindings** in the
-plugin settings to open it. The button prefers Neovim, jumping to an existing
-Activity override or to the end of the file; without Neovim, it uses Omarchy's
-config editor.
-
-Omarchy assigns `Super+Ctrl+T` to btop by default. To replace it, e.g. with
-`Super+Ctrl+Alt+g`, add:
+plugin settings to open it. Omarchy assigns `Super+Ctrl+T` to btop by default.
+To replace it, e.g. with `Super+Ctrl+Alt+g`, add:
 
 ```lua
 hl.unbind("SUPER + CTRL + T")
