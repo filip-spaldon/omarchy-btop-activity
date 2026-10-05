@@ -12,7 +12,6 @@ Item {
   property bool customIconInvalid: false
   property real cpuUsage: 0
   property real memoryUsage: 0
-  property bool activityAvailable: false
   property real iconSize: 12
   property real glyphSize: iconSize
 
@@ -28,7 +27,6 @@ Item {
     cpuUsage: root.cpuUsage
     memoryUsage: root.memoryUsage
     color: root.foreground
-    opacity: root.activityAvailable ? 1 : 0.4
   }
 
   Image {

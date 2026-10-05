@@ -1,11 +1,20 @@
-# btop Activity for Omarchy Quattro
+# btop activity for Omarchy
 
-Brings btop back to the Omarchy bar: live CPU, RAM, and GPU usage (also vRAM)
-and temperatures.
+Brings btop back to the Omarchy bar, with CPU, RAM, GPU usage, VRAM and
+temperature readings. In isolated tests on an Intel Core i7-4790, the widget
+added roughly 10 MiB of RAM while idle; idle telemetry used about 0.2% of one
+logical CPU.
 
 ![btop Activity on the Omarchy desktop](preview.png)
 
-## Features
+## Demo
+
+See btop launch from the bar, switch between floating and tiled layouts, apply a
+250 ms refresh interval live, and update its keybinding.
+
+<https://github.com/user-attachments/assets/d8dde155-dd62-4afa-b586-2f4b95a61d4e>
+
+### Features
 
 - applies settings live to the running btop application
 - preserves Omarchy's btop theme without touching the normal user `btop.conf`
@@ -24,19 +33,12 @@ hardware. The plugin detects supported tools automatically.
 
 After installation:
 
-- **left-click** bar icon to start/focus btop in the selected window mode
+- **left-click** bar icon to start/close btop in the selected window mode
 - **right-click** bar icon to open the plugin settings
   - choose **Settings** to change plugin and btop options
   - choose **Help** to open built-in help in the selected window mode
 - **hover over it** to see RAM use, CPU use and temperature, and GPU use,
   temperature, and VRAM
-
-## Demo
-
-See btop launch from the bar, switch between floating and tiled layouts, apply a
-250 ms refresh interval live, and update its keybinding.
-
-<https://github.com/user-attachments/assets/d8dde155-dd62-4afa-b586-2f4b95a61d4e>
 
 ## Settings
 
@@ -51,37 +53,43 @@ The plugin keeps a short list of useful controls before opening btop:
 | Process tree           | on or off                                |
 | Process sorting        | lazy CPU, direct CPU, memory, or program |
 | Transparent background | on or off                                |
+| More plugin settings   | opens the advanced settings file         |
 
 For the update interval, press Enter or click the value to edit it. Left/Right
-(or `h`/`l`) change it by 1 ms. Up/Down (or `k`/`j`) move through 250, 500,
-1000, 2000, and 5000 ms while still letting you type any value in btop's full
-range. From a custom value, they jump to the next preset above or below it and
-wrap around at the ends.
+(or `h`/`l`) change it by 1 ms. Up/Down (or `k`/`j`) move through the presets in
+[`settings.toml`](#settingstoml) while still letting you type any value in
+btop's full range.
+
+Plugin readings refresh while hovering over the icon or viewing its menu, then
+pause when idle. That keeps things lean instead of constantly checking system
+usage in the background.
 
 Edit `~/.config/hypr/bindings.lua` directly, or select **Keybindings** in the
-plugin settings to open it. The button prefers Neovim, jumping to an existing
-Activity override or to the end of the file; without Neovim, it uses Omarchy's
-config editor.
-
-Omarchy assigns `Super+Ctrl+T` to btop by default. To replace it, e.g. with
-`Super+Ctrl+Alt+g`, add:
+plugin settings to open it. Omarchy uses `Super+Ctrl+T` for ordinary btop. To
+use `Super+Ctrl+Alt+G` for the plugin's toggle action instead, add:
 
 ```lua
 hl.unbind("SUPER + CTRL + T")
-o.bind("SUPER + CTRL + ALT + G", "Activity", { tui = "btop" })
+o.bind("SUPER + CTRL + ALT + G", "Activity", os.getenv("HOME")
+  .. "/.config/omarchy/plugins/ilyazar.btop/helpers/toggle-btop.sh")
+-- for ordinary btop, comment out the two lines above and uncomment this:
+-- o.bind("SUPER + CTRL + ALT + G", "Activity", { tui = "btop" })
 ```
+
+Use `SUPER + CTRL + T` in `o.bind` to keep the original shortcut. For ordinary
+btop instead of the plugin's toggle action, use `{ tui = "btop" }` as the last
+argument.
+
+The toggle shortcut follows the plugin's window mode and leaves ordinary btop
+windows alone.
 
 After Hyprland reloads, the settings row shows the effective shortcut, or
 `Unbound` when no Activity binding remains.
 
 Cycle **Tray icon** through **Meters**, **CPU**, **Pulse**, and **Custom**. The
-default CPU icon follows the bar's normal foreground color. The custom path is
-stored separately, so switching between styles does not discard it. **CPU** is
-the default for new installations.
-
-For **Custom**, enter an absolute path, a `~/path`, or a `file://` URL, then
-press Enter or **Save**. SVG and PNG work well. The plugin renders the file
-as-is and does not recolor it. An invalid path shows `!`.
+custom path is stored separately, so switching between styles does not discard
+it. For **Custom**, enter an absolute path, a `~/path`, or a `file://` URL, then
+press Enter or **Save**. SVG and PNG both work. An invalid path shows `!`.
 
 Depending on the installed icon themes, useful paths include:
 
@@ -89,13 +97,40 @@ Depending on the installed icon themes, useful paths include:
 - `/usr/share/icons/HighContrast/scalable/apps/utilities-system-monitor.svg`
 - `/usr/share/icons/Yaru/scalable/apps/system-monitor-app-symbolic.svg`
 
-Plugin choices are stored in Omarchy's `shell.json` and survive shell restarts.
+Changes made in the settings menu are saved in Omarchy's `shell.json`.
+Left-click behavior and interval presets use the optional `settings.toml` file
+described below.
 
-Under **Plugin**, choose whether btop opens tiled or floating or open its
-keybindings. The window mode applies to both left-click and Help. Floating is
-the default and restores Omarchy's centered 875 x 600 window size when
-selected. Under **btop**, live settings include whether btop paints its own
-background.
+### settings.toml
+
+Since v0.2.5, the plugin offers an optional user-owned settings file at
+`~/.config/omarchy/ilyazar.btop/settings.toml`, respecting `XDG_CONFIG_HOME`.
+
+At the bottom of the settings popup, **More plugin settings > Open settings
+file** opens your copy in Omarchy's configured editor. If the file is missing,
+this button offers the Yes/No prompt again. Plugin updates do not touch your
+copy.
+
+The shipped defaults are:
+
+```toml
+left_click = "toggle"
+poll_intervals = [250, 500, 1000, 2000, 5000]
+```
+
+- `left_click`: `"toggle"` is the default and closes the plugin's btop window
+  when it is already open; `"open"` launches or focuses instead. This affects
+  only the bar icon's left-click. The popup's **start [b]top** action always
+  opens or focuses btop
+- `poll_intervals`: the preset ladder for the update-interval arrows, in
+  milliseconds, not additional polling loops. Use a nonempty list of whole
+  numbers between 100 and 86400000. Values are sorted and duplicates removed
+
+Keep each setting on one line. Blank lines and `#` comments are supported;
+omitted settings use their shipped defaults. Valid saves apply immediately,
+without restarting the shell. Invalid values, duplicate keys, unknown keys, and
+malformed entries show an error below the editor button and leave the session's
+last valid settings unchanged. Removing the file restores defaults.
 
 ## Optional hardware setup
 
@@ -105,187 +140,18 @@ for that hardware to fill the gap. Installing one does not guarantee every
 reading: some GPUs do not expose a separate temperature or dedicated video
 memory.
 
-Follow only the sections that match your hardware. On a mixed-GPU system, each
-card can use a different source. The plugin detects tools automatically and
-never installs packages or changes permissions itself. After setup, allow about
-30 seconds for discovery and retries, or restart the shell:
+See the [hardware setup guide](docs/optional_hardware_polling.md), also
+available [on the website][hardware-guide].
 
-```bash
-omarchy restart shell
-```
-
-With multiple GPUs, the popup shows usage for the default OpenGL renderer when
-Fastfetch can match it to exactly one device. The tooltip still lists every GPU;
-an ambiguous renderer leaves the popup showing the GPU count.
-
-Run the verification commands below as your normal desktop user, without `sudo`.
-A command that only works as root will not work inside the plugin. The tooltip
-and btop's own GPU panel use separate readers; installing a tool for the tooltip
-does not necessarily enable the same readings inside btop.
-
-### CPU, RAM, and standard GPU readings
-
-No additional installation is needed for CPU/RAM usage. Temperatures depend on
-the sensors your kernel exposes; missing sensors stay `--` rather than being
-replaced by another component's temperature.
-
-Fastfetch supplies GPU names and additional readings where supported. It is
-already part of Omarchy; if you previously removed it, restore it with:
-
-```bash
-sudo pacman -S --needed fastfetch
-```
-
-The plugin also reads available Linux GPU counters directly. These paths need no
-vendor monitoring package.
-
-### AMD Radeon GPUs: ROCm SMI
-
-With the `amdgpu` driver, Linux may already expose usage, temperature, and VRAM.
-For missing readings, and for AMD support in btop's own GPU panel, install ROCm
-SMI:
-
-```bash
-sudo pacman -S --needed rocm-smi-lib
-/opt/rocm/bin/rocm-smi --showbus --showuse --showtemp --showmeminfo vram --json
-```
-
-Restart btop if it was open during installation. On our Radeon RX 6400, this
-read-only command works without extra permissions. Removing ROCm SMI leaves the
-plugin's kernel-provided readings working. That result does not guarantee the
-same coverage on every AMD model.
-
-If the command reports GPU-access permission errors, check the device access
-described under [AMD SMI](#amd-gpus-alternative-amd-smi) below. Installing the
-monitoring tool does not replace or repair the graphics driver.
-
-### AMD GPUs: alternative AMD SMI
-
-The plugin also supports `amd-smi`, supplied by Arch's
-[`amdsmi` package](https://archlinux.org/packages/extra/x86_64/amdsmi/files/).
-It is an alternative source for usage, temperature, and VRAM on supported
-`amdgpu` devices. You do not need both AMD tools when your readings already
-work.
-
-```bash
-sudo pacman -S --needed amdsmi
-/opt/rocm/bin/amd-smi list --json
-/opt/rocm/bin/amd-smi metric --json -u -t -m
-```
-
-If it reports missing `render`/`video` groups or denied GPU-device access, an
-administrator can grant the standard
-[AMD GPU access groups](https://rocm.docs.amd.com/projects/radeon-ryzen/en/latest/docs/install/installrad/native_linux/install-radeon.html):
-
-```bash
-sudo usermod -aG render,video "$USER"
-```
-
-Log out of the desktop completely and log back in before retrying. This grants
-GPU-device access to your account, not just to this plugin. Do not add groups if
-the queries already work. AMD SMI also needs a compatible GPU and driver;
-permissions cannot make an unsupported device work. This backend is implemented
-but has not been hardware-tested here.
-
-### Intel integrated graphics using i915
-
-For Intel graphics using the `i915` driver, the plugin can read usage through
-`intel_gpu_top`:
-
-```bash
-sudo pacman -S --needed intel-gpu-tools
-intel_gpu_top
-```
-
-Press Ctrl+C to exit the tool. If it reports `Permission denied` or requests
-`CAP_PERFMON`, grant that capability specifically to its executable:
-
-```bash
-sudo setcap cap_perfmon=ep /usr/bin/intel_gpu_top
-getcap /usr/bin/intel_gpu_top
-```
-
-The last command should show `cap_perfmon=ep`. This permits access to
-[performance counters](https://www.kernel.org/doc/html/latest/admin-guide/perf-security.html)
-without running the tool as root. Reinstalling or upgrading the package can
-remove the capability; check and reapply it if usage disappears.
-
-We verified this setup on two Intel Haswell systems, including removing and
-reinstalling the package. This reader supplies usage, not GPU temperature.
-Integrated graphics can share system RAM with the CPU instead of having
-dedicated VRAM. The plugin currently selects this CLI only for `i915`, not `xe`.
-
-For Intel usage, the source order is a kernel `gpu_busy_percent` counter,
-`intel_gpu_top` on i915, Fastfetch, XPU-SMI, and finally DRM `fdinfo`. Missing
-or failed readers are skipped. The `fdinfo` fallback covers only clients
-visible to the current user and may not represent the whole device. Btop's own
-GPU panel uses an embedded i915 PMU reader. Any `CAP_PERFMON` granted to the
-btop executable applies only to btop and cannot be reused by the plugin.
-
-### NVIDIA GPUs
-
-On supported NVIDIA systems, Omarchy normally installs `nvidia-smi` with the
-graphics driver utilities. It can supply usage, temperature, and VRAM. Check
-whether it already works:
-
-```bash
-nvidia-smi
-```
-
-If you use the current NVIDIA driver branch and its utilities are missing:
-
-```bash
-sudo pacman -S --needed nvidia-utils
-```
-
-[`nvidia-utils` includes `nvidia-smi`](https://archlinux.org/packages/extra/x86_64/nvidia-utils/files/).
-The utilities must match your installed driver branch. For example, a legacy
-`nvidia-580xx` installation needs its matching `nvidia-580xx-utils` package, not
-a blind switch to `nvidia-utils`. Follow your driver setup if the command
-reports a driver/library mismatch or cannot communicate with the GPU.
-
-No Intel-style `CAP_PERFMON` setup is normally needed for these
-[read-only NVIDIA queries](https://docs.nvidia.com/deploy/nvidia-smi/index.html).
-The plugin does not use `nvidia-smi` with Nouveau, and a working CLI still may
-report unsupported fields. This backend has not been hardware-tested here.
-
-### Intel discrete and data-center GPUs: XPU-SMI (experimental)
-
-An additional `xpu-smi` adapter is implemented for Intel GPUs supported by that
-tool. It can supply usage, temperature, and memory, but it is not a general
-upgrade for older Intel integrated graphics.
-
-This is not yet a verified Arch/Omarchy installation recipe. As checked on
-2026-09-05, the AUR's
-[`xpu-smi-bin` package](https://aur.archlinux.org/packages/xpu-smi-bin) is
-orphaned, flagged out of date, and still at version 1.2.35. We do not recommend
-installing that package blindly just to fill a missing tooltip value.
-
-A working installation needs the matching Intel GPU driver, Level Zero loader
-and GPU compute runtime, and the dependencies required by its XPU-SMI version.
-Follow
-[Intel's installation guidance](https://github.com/intel/xpumanager#how-to-get-xpu-manager)
-for your device and release. Once `xpu-smi` is installed and available on the
-desktop session's `PATH`, verify it as your normal user:
-
-```bash
-xpu-smi discovery -j
-xpu-smi discovery -d 0 -j
-xpu-smi stats -d 0 -j
-```
-
-Replace `0` with a device listed by discovery. Successful discovery alone is not
-enough: statistics must also be readable without root. If access is denied,
-follow that release's device-permission guidance; do not assume the
-`intel_gpu_top` capability command applies here. We have not verified this
-backend's installation, permissions, or live readings on suitable hardware.
+[hardware-guide]:
+  https://omarchyqol.com/docs/plugins/omarchy-btop-activity/hardware/
 
 ## Config safety and troubleshooting
 
-The plugin stores its choices in Omarchy's `shell.json` and generates its
-private btop config at
-`$XDG_RUNTIME_DIR/omarchy-btop-activity/btop.conf`. It verifies that the
-runtime directory is available, user-owned, and writable before creating its
+The plugin stores popup choices in Omarchy's `shell.json` and advanced choices
+in the user-owned `settings.toml` described above. It generates its private btop
+config at `$XDG_RUNTIME_DIR/omarchy-btop-activity/btop.conf`. It verifies that
+the runtime directory is available, user-owned, and writable before creating its
 own private directory. The normal user `btop.conf` is never read or written.
 
 The runtime file is created from Omarchy's packaged btop config. Quickshell
@@ -295,13 +161,13 @@ reuses it and updates the btop settings stored in `shell.json`. Otherwise, it
 creates the file when needed.
 
 Omarchy plugins have no uninstall hook. Removing the plugin can leave this
-temporary directory until the user runtime is cleared. That often happens at
-the final logout and always happens on reboot; user lingering can delay it. The
+temporary directory until the user runtime is cleared. That often happens at the
+final logout and always happens on reboot; user lingering can delay it. The
 leftover is harmless: normal btop never reads it, and reinstalling the plugin
 reuses it. No marker or backup files are created.
 
 GPU temperature and VRAM depend on driver support. If unavailable, the hover
-says `--` or `-- (vRAM)`. See the hardware-specific
+says `--` or `-- (VRAM)`. See the hardware-specific
 [setup instructions](#optional-hardware-setup) for optional tools, permissions,
 and verification commands.
 
@@ -312,8 +178,9 @@ omarchy plugin remove ilyazar.btop
 ```
 
 Removing the plugin stops using its private btop settings. It does not remove
-btop or change btop's normal configuration. The temporary generated file may
-remain until the user runtime is cleared.
+btop or change btop's normal configuration. Your advanced settings file is
+preserved. The temporary generated btop config may remain until the user runtime
+is cleared.
 
 ## Roadmap and releases
 
@@ -365,9 +232,7 @@ Planned work stays at the top. Shipped entries come from
 
 ## Development
 
-The installed plugin is a regular Git checkout; symlinked plugin folders are
-not supported. Install it using [Quickstart](#quickstart), then edit that
-checkout directly. After making changes, validate and reload it:
+Edit the checkout used by the installed plugin, then validate and reload it:
 
 ```bash
 cd ~/.config/omarchy/plugins/ilyazar.btop

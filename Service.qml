@@ -6,7 +6,11 @@ import "lib/UpdateInterval.js" as UpdateInterval
 QtObject {
   id: root
 
-  property Telemetry telemetry: Telemetry { updateMs: root.updateMs }
+  property var _telemetryUsers: []
+  property Telemetry telemetry: Telemetry {
+    updateMs: root.updateMs
+    active: root._telemetryUsers.length > 0
+  }
   readonly property real cpuUsage: telemetry.cpuUsage
   readonly property real memoryUsage: telemetry.memoryUsage
   readonly property real memoryUsed: telemetry.memoryUsed
@@ -66,6 +70,12 @@ QtObject {
     "fi",
     "chmod 0700 -- \"$runtime_dir\" || exit 24"
   ].join("\n")
+
+  function setTelemetryDemand(owner, needed) {
+    var users = _telemetryUsers.filter(function (user) { return user !== owner })
+    if (needed) users.push(owner)
+    _telemetryUsers = users
+  }
 
   function validatedConfig(interval, sorting, tree, transparentBackground) {
     var update = UpdateInterval.parse(interval)

@@ -79,6 +79,17 @@ TestCase {
   }
 
   function test_ladder(data) {
-    compare(UpdateInterval.ladder(data.input, data.direction), data.expected)
+    compare(UpdateInterval.ladder(data.input, data.direction,
+                                  UpdateInterval.presets), data.expected)
+  }
+
+  function test_custom_presets() {
+    var presets = [750, 1500]
+    compare(UpdateInterval.ladder(1000, 1, presets), 1500)
+    compare(UpdateInterval.ladder(1000, -1, presets), 750)
+    compare(UpdateInterval.ladder(1500, 1, presets), 750)
+    compare(UpdateInterval.ladder(750, -1, presets), 1500)
+    compare(UpdateInterval.ladder(1000, 1, [750]), 750)
+    compare(UpdateInterval.presets, [250, 500, 1000, 2000, 5000])
   }
 }

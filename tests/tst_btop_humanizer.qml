@@ -29,11 +29,11 @@ TestCase {
         tag: "btop screenshot",
         used: 1610612736,
         total: 4294967296,
-        expected: "1.5G/4.0G (vRAM)"
+        expected: "1.5G/4.0G (VRAM)"
       },
-      { tag: "missing used", used: -1, total: 4294967296, expected: "-- (vRAM)" },
-      { tag: "missing total", used: 0, total: -1, expected: "-- (vRAM)" },
-      { tag: "zero total", used: 0, total: 0, expected: "-- (vRAM)" }
+      { tag: "missing used", used: -1, total: 4294967296, expected: "-- (VRAM)" },
+      { tag: "missing total", used: 0, total: -1, expected: "-- (VRAM)" },
+      { tag: "zero total", used: 0, total: 0, expected: "-- (VRAM)" }
     ]
   }
 

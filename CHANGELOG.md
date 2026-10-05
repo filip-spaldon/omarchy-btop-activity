@@ -2,12 +2,30 @@
 
 Notable changes to btop Activity are documented here.
 
+## 0.2.5 - 2026-10-03
+
+- Read defaults from a shipped `settings.toml`: `poll_intervals` sets the
+  interval ladder the Update interval arrows step through, and `left_click`
+  chooses whether a left click opens btop or toggles it (@gw7523).
+- Add `helpers/toggle-btop.sh`, which closes the plugin's btop window when one
+  is open and launches btop otherwise. It backs `left_click = "toggle"` and can
+  be bound directly, so one key both opens and closes btop (@gw7523).
+- Move the shipped defaults to `settings.example.toml`; More plugin settings
+  opens an optional user-owned `settings.toml` outside the checkout. Valid
+  saves apply immediately; invalid edits keep the last working settings.
+- Reduce idle CPU use by sampling only on hover or while the menu is open,
+  without making the icon flicker when sampling resumes.
+- Make GPU readings follow the selected update interval alongside CPU and RAM.
+- Show theme-colored `[b]`, `[s]`, and `[?]` menu shortcut hints.
+- Use `l`/Right to enter Settings and `h`/Left on Back to return to the menu.
+- Keep the menu open when starting btop from it, so settings remain accessible.
+
 ## 0.2.4 - 2026-09-20
 
 - Stop using GNU find's FTS traversal for DRM fdinfo sampling so processes
   exiting during `/proc` discovery cannot abort the collector. Thanks
-  @LekkerBelangrijk and @kzagoris for the independent crash reports and
-  @gw7523 for the fix.
+  @LekkerBelangrijk and @kzagoris for the independent crash reports and @gw7523
+  for the fix.
 - Keep the proc scanner in a dedicated Python helper and propagate unexpected
   failures to telemetry retry handling.
 

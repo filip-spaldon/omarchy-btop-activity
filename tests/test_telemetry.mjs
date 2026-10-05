@@ -23,6 +23,25 @@ const device = (vendor = '0x8086', driver = 'i915', id = '0000:00:02.0') => {
   return gpu
 }
 
+test('telemetry demand stays active until the last widget releases it', () => {
+  const source = fs.readFileSync(path.join(root, 'Service.qml'), 'utf8')
+  const method = source.match(/  function setTelemetryDemand\(owner, needed\) \{[\s\S]*?\n  \}/)
+  assert.ok(method, 'service demand method is missing')
+  const service = vm.createContext({ _telemetryUsers: [] })
+  vm.runInContext(method[0], service)
+  const first = {}, second = {}
+  service.setTelemetryDemand(first, true)
+  service.setTelemetryDemand(first, true)
+  assert.equal(service._telemetryUsers.length, 1)
+  service.setTelemetryDemand(second, true)
+  service.setTelemetryDemand(first, false)
+  assert.equal(service._telemetryUsers.length, 1)
+  assert.equal(service._telemetryUsers[0], second)
+  service.setTelemetryDemand(second, false)
+  service.setTelemetryDemand(second, false)
+  assert.equal(service._telemetryUsers.length, 0)
+})
+
 test('discovery resolves PCI aliases for the Intel sys selector', () => {
   const fixture = fs.mkdtempSync(path.join(os.tmpdir(), 'btop-discovery-'))
   try {
